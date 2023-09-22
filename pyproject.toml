@@ -9,9 +9,13 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
+click = "^8.1.7"
 
 [tool.poetry.group.test.dependencies]
 s3fs = "2023.6.0"
 pandas = "2.0.3"
 pyyaml = "6.0"
+python-dotenv = "1.0.0"
+
+[tool.poetry.group.spark.dependencies]
 python-dotenv = "1.0.0"

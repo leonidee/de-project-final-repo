@@ -31,3 +31,15 @@ ENV PATH="/opt/python/python-$PYTHON_VERSION/bin:$PATH" \
 RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=/opt/poetry /opt/python/python-$PYTHON_VERSION/bin/python3.11 -
 
 ENV PATH="/opt/poetry/bin:$PATH"
+
+# Download certificate for yandex-cloud
+RUN curl "https://storage.yandexcloud.net/cloud-certs/CA.pem" -o /app/CA.pem
+RUN chmod 0600 /app/CA.pem
+
+# Install dependensies
+COPY ./pyproject.toml /app/pyproject.toml
+
+RUN cd /app \
+    && poetry env use /opt/python/python-$PYTHON_VERSION/bin/python3.11 \
+    && source $(poetry env info --path)/bin/activate \
+    && poetry install --only spark
