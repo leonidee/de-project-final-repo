@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "de-project-final-repo"
+version = "0.1.0"
+repository = "https://github.com/leonidee/spark-static-stream-job"
+description = ""
+authors = ["Grishenkov Leonid <grishenkovleonid@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+[tool.poetry.group.test.dependencies]
+s3fs = "2023.6.0"
+pandas = "2.0.3"
+pyyaml = "6.0"
+python-dotenv = "1.0.0"

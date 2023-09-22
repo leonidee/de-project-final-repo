@@ -1,0 +1,88 @@
+version: '3.8'
+
+networks:
+  internal:
+    driver: bridge
+
+x-spark-common: &spark-common
+  build: 
+    dockerfile: docker/spark/Dockerfile
+  environment: 
+    - SPARK_MODE=worker
+    - SPARK_MASTER_URL=spark://spark-master:7077
+    - SPARK_WORKER_MEMORY=2G
+    - SPARK_WORKER_CORES=1
+    - SPARK_RPC_AUTHENTICATION_ENABLED=no
+    - SPARK_RPC_ENCRYPTION_ENABLED=no
+    - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+    - SPARK_SSL_ENABLED=no
+    - SPARK_USER=${SPARK_USER}
+    # More environment variables natively supported by Apache Spark
+    # can be found here -> https://spark.apache.org/docs/latest/spark-standalone.html#cluster-launch-scripts
+  volumes:
+    - ./src:/app/src
+    - ./jobs:/app/jobs
+    - ./spark:/app/spark
+    - ./.env:/app/.env
+    - ./config.yaml:/app/config.yaml
+    - ./pyproject.toml:/app/pyproject.toml
+    - ./poetry.lock:/app/poetry.lock
+    - ./config/spark/log4j2.properties:/opt/bitnami/spark/conf/log4j2.properties
+  restart: unless-stopped
+  networks:
+    - internal
+
+services:
+  spark-master:
+    <<: *spark-common
+    container_name: spark-master
+    environment:
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_USER=spark
+    ports:
+      - "8080:8080"
+      - "7077:7077"
+
+  spark-worker-1:
+    <<: *spark-common
+    container_name: spark-worker-1
+    ports:
+      - "8081:8081"
+    depends_on:
+      - spark-master
+
+  spark-worker-2:
+    <<: *spark-common
+    container_name: spark-worker-2
+    ports:
+      - "8082:8081"
+    depends_on:
+      - spark-master
+
+  spark-worker-3:
+    <<: *spark-common
+    container_name: spark-worker-3
+    ports:
+      - "8083:8081"
+    depends_on:
+      - spark-master
+
+  spark-worker-4:
+    <<: *spark-common
+    container_name: spark-worker-4
+    ports:
+      - "8084:8081"
+    depends_on:
+      - spark-master
+
+  spark-worker-5:
+    <<: *spark-common
+    container_name: spark-worker-5
+    ports:
+      - "8085:8081"
+    depends_on:
+      - spark-master
