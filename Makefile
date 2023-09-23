@@ -27,5 +27,6 @@ run-consumer:
 		-X sasl.username=$$YC_KAFKA_USERNAME \
 		-X sasl.password=$$YC_KAFKA_PASSWORD \
 		-X ssl.ca.location=./CA.pem \
-		-C -o beginning -t $(topic) \
+		-C -o $(offset) -t $(topic) \
 		-f 'Key: %k\nValue: %s\nPartition: %p\nOffset: %o\nTimestamp: %T\n'
+
