@@ -1,0 +1,11 @@
+{
+    "object_id": "de782eb3-0a21-50e6-bfea-f08bac459c2b",
+    "object_type": "CURRENCY",
+    "sent_dttm": "2022-10-12T00:00:00",
+    "payload": {
+        "date_update": "2022-10-12 00:00:00",
+        "currency_code": 410,
+        "currency_code_with": 470,
+        "currency_with_div": 1.07
+    }
+}

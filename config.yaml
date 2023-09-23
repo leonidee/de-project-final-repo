@@ -1,0 +1,10 @@
+stream:
+  prod: &prod
+    topic: transaction-service-input
+    checkpoint-location: s3a://data-ice-lake-05/master/data/source/spark-streaming-checkpoints
+    output-path: s3a://data-ice-lake-05/master/data/source/streaming-query
+    application-name: app
+    query-name: query
+    processing_time: 30 seconds
+  dev:
+    <<: *prod
