@@ -58,6 +58,16 @@ Up spark in docker containers with compose
 docker compose up --build -d spark-master spark-worker-1 spark-worker-2 spark-worker-3 spark-worker-4
 ```
 
+```shell
+docker compose up --build -d
+```
+
+To see logs run
+
+```shell
+docker logs spark-master --follow 
+```
+
 
 # Else
 

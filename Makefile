@@ -30,3 +30,11 @@ run-consumer:
 		-C -o $(offset) -t $(topic) \
 		-f 'Key: %k\nValue: %s\nPartition: %p\nOffset: %o\nTimestamp: %T\n'
 
+
+submit-job:
+	docker exec -it spark-master \
+	PYSPARK_PYTHON=/app/.venv/bin/python \
+	/opt/bitnami/spark/bin/spark-submit \
+	--packages org.apache.spark:spark-streaming-kafka-0-10_2.12:3.4.1,org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.1 \
+	/app/src/stream/stream.py --topic=transaction-service-input
+
