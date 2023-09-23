@@ -4,23 +4,29 @@ import sys
 from os import getenv
 
 import click
+import dotenv
 import yaml
 from pyspark.sql import SparkSession
 from pyspark.sql.utils import AnalysisException, CapturedException
 
-sys.path.append("/app")
+dotenv.load_dotenv()
+
+sys.path.append(getenv("APP_PATH"))
 from src.logger import get_logger
-from src.stream.components import Query
+from src.stream.query import get_query
 
 log = get_logger(__name__)
 
+with open(f'{getenv("APP_PATH")}/config.yaml') as f:
+    config = yaml.safe_load(f)["stream"]
+
 
 @click.command()
-@click.option("--mode", help="Some description", type=str)
+@click.option("--mode", help="oif", type=str, default="dev", required=True)
 def main(mode: str) -> None:
     spark = (
         SparkSession.builder.master("spark://spark-master:7077")
-        .appName("test")
+        .appName(config["app-name"])
         .config(
             map={
                 "spark.hadoop.fs.s3a.access.key": getenv("S3_ACCESS_KEY_ID"),
@@ -32,12 +38,12 @@ def main(mode: str) -> None:
         .getOrCreate()
     )
 
-    query = Query(spark=spark, mode=mode).get_query()
+    query = get_query(spark=spark, mode=mode)
 
     try:
         query.start().awaitTermination()
     except (CapturedException, AnalysisException) as err:
-        log.exception(err)
+        log.error(err)
         query.stop()  # type:ignore
         sys.exit(1)
 
