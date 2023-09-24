@@ -32,6 +32,8 @@ def get_query(
     `pyspark.sql.streaming.DataStreamWriter`
         DataStreamWrite object with results.
     """
+    log.info(f"Getting streaming query with {mode=}")
+
     config = parse_config(mode=mode)
 
     frame: pyspark.sql.DataFrame = _read_stream(spark=spark, config=config)
@@ -45,6 +47,8 @@ def get_query(
         `batch_id` : `int`
             Batch id.
         """
+        log.info(f"Excecuting fucntion for {batch_id=}")
+
         frame.persist(StorageLevel.MEMORY_ONLY)
 
         _write_dataframe(
@@ -123,8 +127,7 @@ def _read_stream(
         raise ValueError(
             "Required environment varialbes not set. See .env.template for more details"
         )
-
-    log.info(f"Subscribe to {config['topic']} kafka topic")
+    log.info(f"Reading stream with given config -> {config=}")
 
     options = {
         "kafka.bootstrap.servers": BOOTSTRAP_SERVER,
@@ -137,6 +140,8 @@ def _read_stream(
         "kafka.ssl.truststore.location": CERTIFICATE_PATH,
         "maxOffsetsPerTrigger": config["trigger"]["offsets-per-trigger"],
     }
+
+    log.info(f"Subscribe to {config['topic']} kafka topic")
 
     df = (
         spark.readStream.format("kafka")
@@ -188,14 +193,14 @@ def _write_dataframe(frame: pyspark.sql.DataFrame, path: str) -> ...:
         S3 path.
     """
 
-    log.info(f"Wriring dataframe to {path} path")
+    log.info(f"Wriring dataframe to {path=} path")
 
     try:
         frame.write.parquet(
             path=path,
             mode="errorifexists",
         )
-        log.info(f"Done! Results -> {path}")
+        log.info(f"Done! Results -> {path=}")
 
     except AnalysisException as err:
         log.warning(f"Notice that {str(err)}. Overwriting")
@@ -204,4 +209,4 @@ def _write_dataframe(frame: pyspark.sql.DataFrame, path: str) -> ...:
             path=path,
             mode="overwrite",
         )
-        log.info(f"Done! Results -> {path}")
+        log.info(f"Done! Results -> {path=}")

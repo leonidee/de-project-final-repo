@@ -39,7 +39,7 @@ submit-streaming-job:
 	&& /opt/bitnami/spark/bin/spark-submit \
 	--packages org.apache.spark:spark-streaming-kafka-0-10_2.12:3.4.1,org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.1 \
 	/app/src/stream/runner.py \
-	--mode=dev"
+	--mode=$(mode)"
 
 
 submit-static-job:
