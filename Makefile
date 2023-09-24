@@ -30,23 +30,4 @@ run-consumer:
 		-C -o $(offset) -t $(topic) \
 		-f 'Key: %k\nValue: %s\nPartition: %p\nOffset: %o\nTimestamp: %T\n'
 
-# Spark cluster commands
-submit-streaming-app:
-	docker exec -it spark-master \
-	bash -c \
-	"cd /app \
-	&& source /app/.venv/bin/activate \
-	&& /opt/bitnami/spark/bin/spark-submit \
-	--packages org.apache.spark:spark-streaming-kafka-0-10_2.12:3.4.1,org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.1 \
-	/app/src/transaction_service_stream_collector/runner.py \
-	--mode=dev"
 
-
-submit-static-job:
-	docker exec -it spark-master \
-	bash -c \
-	"cd /app \
-	&& source /app/.venv/bin/activate \
-	&& /opt/bitnami/spark/bin/spark-submit \
-	/app/src/static/runner.py --mode=dev"
-	

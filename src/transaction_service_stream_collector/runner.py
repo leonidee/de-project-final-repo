@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import sys
 from os import getenv
 
@@ -49,6 +47,7 @@ def main(mode: str) -> None:
     except (CapturedException, AnalysisException) as err:
         log.error(err)
         query.stop()  # type:ignore
+        spark.stop()
         sys.exit(1)
 
 

@@ -9,7 +9,10 @@ log = get_logger(__name__)
 
 
 def parse_config(
-    app: Literal["transaction-service-stream-collector", "static"], mode: str
+    app: Literal[
+        "transaction-service-stream-collector", "transaction-service-clean-collector"
+    ],
+    mode: str,
 ) -> dict[str, str | int]:
     """Parse config file `config.yaml` for `stream` job.
 
@@ -28,8 +31,8 @@ def parse_config(
     match app:
         case "transaction-service-stream-collector":
             config_path = f"{getenv('APP_PATH')}/src/transaction_service_stream_collector/config.yaml"
-        case "static":
-            config_path = f"{getenv('APP_PATH')}/src/static/config.yaml"
+        case "transaction-service-clean-collector":
+            config_path = f"{getenv('APP_PATH')}/src/transaction_service_clean_collector/config.yaml"
 
     log.info(f"Loading {config_path=}")
 

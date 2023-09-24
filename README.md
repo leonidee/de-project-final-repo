@@ -2,6 +2,8 @@
 
 # Jobs
 
+## transaction-service-stream-collector
+
 Dev cycle, 
 
 ```shell
@@ -26,6 +28,32 @@ docker exec -it spark-master \
 	--packages org.apache.spark:spark-streaming-kafka-0-10_2.12:3.4.1,org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.1 \
 	/app/src/transaction_service_stream_collector/runner.py \
 	--mode=test"
+```
+
+## transaction-service-clean-collector
+
+For `transaction` table:
+
+```shell
+docker exec -it spark-master \
+	bash -c \
+	"cd /app \
+	&& source /app/.venv/bin/activate \
+	&& /opt/bitnami/spark/bin/spark-submit \
+	/app/src/transaction_service_clean_collector/runner.py \
+	--mode=dev --table=transaction --date=2023-09-24 --hour=15:00"
+```
+
+And for `currency` table:
+
+```shell
+docker exec -it spark-master \
+	bash -c \
+	"cd /app \
+	&& source /app/.venv/bin/activate \
+	&& /opt/bitnami/spark/bin/spark-submit \
+	/app/src/transaction_service_clean_collector/runner.py \
+	--mode=dev --table=currency --date=2023-09-24 --hour=15:00"
 ```
 
 

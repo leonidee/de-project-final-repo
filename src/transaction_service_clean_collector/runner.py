@@ -5,35 +5,17 @@ from os import getenv
 
 import click
 import dotenv
-import pyspark
-import pyspark.sql.functions as F
-import pyspark.sql.types as T
 from pyspark.sql import SparkSession
 from pyspark.sql.utils import AnalysisException, CapturedException
 
 dotenv.load_dotenv()
 
 sys.path.append(getenv("APP_PATH"))
-from src.config import parse_config
-from src.logger import get_logger
+from collector import collect_currency_table, collect_transaction_table
+
+from src import get_logger, parse_config
 
 log = get_logger(__name__)
-
-
-def read_data(spark: pyspark.sql.DataFrame, config: dict):
-    df = spark.read.parquet(config["input-path"])
-
-    df.printSchema()
-
-    df.show(100, False)
-
-
-def processed_transactions(spark: pyspark.sql.DataFrame, config: dict):
-    df = spark.read.parquet(config["input-path"]).where(
-        F.col("object_type") == "transaction"
-    )
-
-    df.show(100, False)
 
 
 @click.command()
@@ -43,8 +25,26 @@ def processed_transactions(spark: pyspark.sql.DataFrame, config: dict):
     type=click.Choice(["prod", "test", "dev"], case_sensitive=True),
     required=True,
 )
-def main(mode: str) -> None:
-    config = parse_config(app="static", mode=mode)
+@click.option(
+    "--table",
+    help="",
+    type=click.Choice(["currency", "transaction"], case_sensitive=True),
+    required=True,
+)
+@click.option(
+    "--date",
+    help="",
+    type=str,
+    required=True,
+)
+@click.option(
+    "--hour",
+    help="",
+    type=str,
+    required=True,
+)
+def main(mode: str, table: str, date: str, hour: str) -> None:
+    config = parse_config(app="transaction-service-clean-collector", mode=mode)
 
     spark = (
         SparkSession.builder.master("spark://spark-master:7077")
@@ -61,11 +61,16 @@ def main(mode: str) -> None:
     )
 
     try:
-        read_data(spark=spark, config=config)
+        match table:
+            case "transaction":
+                collect_transaction_table(spark=spark, mode=mode, date=date, hour=hour)
+            case "currency":
+                collect_currency_table(spark=spark, mode=mode, date=date, hour=hour)
     except (CapturedException, AnalysisException) as err:
         log.error(err)
-        query.stop()  # type:ignore
         sys.exit(1)
+    finally:
+        spark.stop()
 
 
 if __name__ == "__main__":
