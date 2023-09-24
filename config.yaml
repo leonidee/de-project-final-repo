@@ -1,21 +1,34 @@
-stream:
-  prod: &stream-config
-    topic: transaction-service-input
-    checkpoint-location: s3a://data-ice-lake-05/prod/source/spark-streaming-checkpoints/stream
-    output-path: s3a://data-ice-lake-05/prod/source/streaming-query
-    app-name: app
-    query-name: query
-    trigger:
-      processing-time: 30 seconds
-      offsets-per-trigger: 100
-  dev:
-    <<: *stream-config
-    checkpoint-location: s3a://data-ice-lake-05/dev/source/spark-streaming-checkpoints/stream
-    app-name: app-dev
-    query-name: query-dev
-  test:
-    <<: *stream-config
-    checkpoint-location: s3a://data-ice-lake-05/test/source/spark-streaming-checkpoints/stream
-    output-path: s3a://data-ice-lake-05/test/source/streaming-query
-    app-name: app-test
-    query-name: query-test
+apps:
+  stream:
+    prod: &stream-config
+      topic: transaction-service-input
+      checkpoint-location: s3a://data-ice-lake-05/prod/source/spark-streaming-checkpoints/stream
+      output-path: s3a://data-ice-lake-05/prod/source/streaming-query
+      app-name: app
+      query-name: query
+      trigger:
+        processing-time: 30 seconds
+        offsets-per-trigger: 100
+    dev:
+      <<: *stream-config
+      checkpoint-location: s3a://data-ice-lake-05/dev/source/spark-streaming-checkpoints/stream
+      output-path: s3a://data-ice-lake-05/dev/source/streaming-query
+      app-name: app-dev
+      query-name: query-dev
+    test:
+      <<: *stream-config
+      checkpoint-location: s3a://data-ice-lake-05/test/source/spark-streaming-checkpoints/stream
+      output-path: s3a://data-ice-lake-05/test/source/streaming-query
+      app-name: app-test
+      query-name: query-test
+  static:
+    prod: &static-config
+      input-path: s3a://data-ice-lake-05/prod/source/streaming-query
+      app-name: app
+    dev:
+      <<: *static-config
+      app-name: app-dev
+    test:
+      <<: *static-config
+      output-path: s3a://data-ice-lake-05/test/source/streaming-query
+      app-name: app-test

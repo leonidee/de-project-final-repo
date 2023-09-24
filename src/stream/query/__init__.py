@@ -9,12 +9,12 @@ import pyspark.sql.types as T
 from pyspark.sql.utils import AnalysisException
 from pyspark.storagelevel import StorageLevel
 
+from src.config import parse_config
 from src.logger import get_logger
-from src.stream.config import parse_config
 
 log = get_logger(__name__)
 
-TODAY = datetime.today()
+TODAY = datetime.now()
 
 
 def get_query(
@@ -34,7 +34,7 @@ def get_query(
     """
     log.info(f"Getting streaming query with {mode=}")
 
-    config = parse_config(mode=mode)
+    config = parse_config(app="stream", mode=mode)
 
     frame: pyspark.sql.DataFrame = _read_stream(spark=spark, config=config)
 
@@ -47,18 +47,25 @@ def get_query(
         `batch_id` : `int`
             Batch id.
         """
-        log.info(f"Excecuting fucntion for {batch_id=}")
+        log.info(f"Excecuting function for {batch_id=}")
 
         frame.persist(StorageLevel.MEMORY_ONLY)
 
+        if mode == "dev":
+            frame.show(50, False)
+            frame.printSchema()
+
+            count: int = frame.count()
+            log.info(f"Processed {count} rows")
+
         _write_dataframe(
             frame=frame.where(F.col("object_type") == "currency"),
-            path=f"{config['output-path']}/datekey={TODAY.strftime(r'%Y%m%d')}/object_type=currency/batch_id={batch_id}",
+            path=f"{config['output-path']}/object_type=currency/date={TODAY.date().__str__()}/hour={TODAY.time().hour}:00/batch_id={batch_id}",
         )
 
         _write_dataframe(
             frame=frame.where(F.col("object_type") == "transaction"),
-            path=f"{config['output-path']}/datekey={TODAY.strftime(r'%Y%m%d')}/object_type=transaction/batch_id={batch_id}",
+            path=f"{config['output-path']}/object_type=transaction/date={TODAY.date().__str__()}/hour={TODAY.time().hour}:00/batch_id={batch_id}",
         )
 
         frame.unpersist()
@@ -68,10 +75,9 @@ def get_query(
             frame.explain(mode="formatted")
 
             return (
-                frame.writeStream.format("console")
-                .outputMode("append")
-                .queryName(config["query-name"])
+                frame.writeStream.queryName(config["query-name"])
                 .trigger(processingTime=config["trigger"]["processing-time"])
+                .foreachBatch(func=_foreach_batch_func)
                 .options(
                     truncate=False,
                     checkpointLocation=f'{config["checkpoint-location"]}/{config["app-name"]}/{config["query-name"]}',

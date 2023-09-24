@@ -7,10 +7,9 @@ from src.logger import get_logger
 log = get_logger(__name__)
 
 CONFIG_PATH = f"{getenv('APP_PATH')}/config.yaml"
-NAME = "stream"
 
 
-def parse_config(mode: str) -> dict[str, str | int]:
+def parse_config(app: str, mode: str) -> dict[str, str | int]:
     """Parse config file `config.yaml` for `stream` job.
 
     ## Parameters
@@ -21,15 +20,15 @@ def parse_config(mode: str) -> dict[str, str | int]:
     `dict`
         Configuration represented as dict.
     """
-    log.debug(f"Opening {CONFIG_PATH=} with {mode=}")
+    log.info(f"Parsing config {CONFIG_PATH=} for {app=} with {mode=}")
 
     with open(CONFIG_PATH) as f:
-        config = yaml.safe_load(f)[NAME]
+        config = yaml.safe_load(f)["apps"]
 
     match mode:
         case "dev":
-            return config["dev"]
+            return config[app]["dev"]
         case "prod":
-            return config["prod"]
+            return config[app]["prod"]
         case "test":
-            return config["prod"]
+            return config[app]["test"]
