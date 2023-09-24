@@ -2,10 +2,9 @@ import click
 
 
 @click.command()
-@click.option("--name", default="World", help="Who to greet.")
-@click.option("--count", default=1, help="How many greetings to print.")
-def main(name: str, count: int):
-    print(name, count)
+@click.option("--name", help="Who to greet.", required=True, type=click.Choice(['prod','test','dev'], case_sensitive=True))
+def main(name: str):
+    print(name)
 
 
 if __name__ == "__main__":

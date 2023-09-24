@@ -1,5 +1,5 @@
 stream:
-  prod: &prod
+  prod: &stream-config
     topic: transaction-service-input
     checkpoint-location: s3a://data-ice-lake-05/prod/source/spark-streaming-checkpoints/stream
     output-path: s3a://data-ice-lake-05/prod/source/streaming-query
@@ -9,8 +9,13 @@ stream:
       processing-time: 30 seconds
       offsets-per-trigger: 100
   dev:
-    <<: *prod
+    <<: *stream-config
     checkpoint-location: s3a://data-ice-lake-05/dev/source/spark-streaming-checkpoints/stream
-    output-path: s3a://data-ice-lake-05/dev/source/streaming-query
     app-name: app-dev
     query-name: query-dev
+  test:
+    <<: *stream-config
+    checkpoint-location: s3a://data-ice-lake-05/test/source/spark-streaming-checkpoints/stream
+    output-path: s3a://data-ice-lake-05/test/source/streaming-query
+    app-name: app-test
+    query-name: query-test

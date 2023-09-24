@@ -73,6 +73,15 @@ def get_query(
                     checkpointLocation=f'{config["checkpoint-location"]}/{config["app-name"]}/{config["query-name"]}',
                 )
             )
+        case "test":
+            return (
+                frame.writeStream.queryName(config["query-name"])
+                .trigger(processingTime=config["trigger"]["processing-time"])
+                .foreachBatch(func=_foreach_batch_func)
+                .options(
+                    checkpointLocation=f'{config["checkpoint-location"]}/{config["app-name"]}/{config["query-name"]}',
+                )
+            )
         case "prod":
             return (
                 frame.writeStream.queryName(config["query-name"])

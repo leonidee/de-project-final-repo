@@ -21,9 +21,8 @@ log = get_logger(__name__)
 @click.command()
 @click.option(
     "--mode",
-    help="Job submition mode. One of following: prod | dev",
-    type=str,
-    default="dev",
+    help="Job submition mode",
+    type=click.Choice(["prod", "test", "dev"], case_sensitive=True),
     required=True,
 )
 def main(mode: str) -> None:
