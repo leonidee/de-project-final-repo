@@ -12,12 +12,12 @@ app:
   dev:
     <<: *config
     output-path: s3a://data-ice-lake-05/dev/source/transaction-service
-    app-name: transaction-service-stream-collector-app
-    query-name: transaction-service-stream-collector-query
+    app-name: transaction-service-stream-collector-dev
+    query-name: transaction-service-stream-collector-dev-query
     checkpoint-location: s3a://data-ice-lake-05/dev/source/spark-streaming-checkpoints/transaction-service
   test:
     <<: *config
     output-path: s3a://data-ice-lake-05/test/source/transaction-service
-    app-name: transaction-service-stream-collector-app
-    query-name: transaction-service-stream-collector-query
+    app-name: transaction-service-stream-collector-test
+    query-name: transaction-service-stream-collector-test-query
     checkpoint-location: s3a://data-ice-lake-05/test/source/spark-streaming-checkpoints/transaction-service
