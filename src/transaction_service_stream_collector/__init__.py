@@ -5,8 +5,7 @@ import warnings
 import dotenv
 
 sys.path.append(os.getenv("APP_PATH"))
-from src.config import parse_config
-from src.logger import get_logger
+from src.transaction_service_stream_collector.query import get_query
 
 if not dotenv.load_dotenv():
     warnings.warn(

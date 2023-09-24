@@ -3,31 +3,49 @@ from __future__ import annotations
 import sys
 from os import getenv
 
+import click
 import dotenv
-import yaml
+import pyspark
+import pyspark.sql.functions as F
+import pyspark.sql.types as T
 from pyspark.sql import SparkSession
 from pyspark.sql.utils import AnalysisException, CapturedException
 
 dotenv.load_dotenv()
 
 sys.path.append(getenv("APP_PATH"))
+from src.config import parse_config
 from src.logger import get_logger
 
 log = get_logger(__name__)
 
-with open(f'{getenv("APP_PATH")}/config.yaml') as f:
-    config = yaml.safe_load(f)["stream"]
 
-
-def read_data(spark):
-    df = spark.read.parquet(config["output-path"])
+def read_data(spark: pyspark.sql.DataFrame, config: dict):
+    df = spark.read.parquet(config["input-path"])
 
     df.printSchema()
 
     df.show(100, False)
 
 
-def main() -> None:
+def processed_transactions(spark: pyspark.sql.DataFrame, config: dict):
+    df = spark.read.parquet(config["input-path"]).where(
+        F.col("object_type") == "transaction"
+    )
+
+    df.show(100, False)
+
+
+@click.command()
+@click.option(
+    "--mode",
+    help="Job submition mode",
+    type=click.Choice(["prod", "test", "dev"], case_sensitive=True),
+    required=True,
+)
+def main(mode: str) -> None:
+    config = parse_config(app="static", mode=mode)
+
     spark = (
         SparkSession.builder.master("spark://spark-master:7077")
         .appName(config["app-name"])
@@ -43,7 +61,7 @@ def main() -> None:
     )
 
     try:
-        read_data(spark=spark)
+        read_data(spark=spark, config=config)
     except (CapturedException, AnalysisException) as err:
         log.error(err)
         query.stop()  # type:ignore

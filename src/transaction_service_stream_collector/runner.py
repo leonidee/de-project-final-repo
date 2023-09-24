@@ -11,9 +11,9 @@ from pyspark.sql.utils import AnalysisException, CapturedException
 dotenv.load_dotenv()
 
 sys.path.append(getenv("APP_PATH"))
-from src.config import parse_config
-from src.logger import get_logger
-from src.stream.query import get_query
+from query import get_query
+
+from src import get_logger, parse_config
 
 log = get_logger(__name__)
 
@@ -26,7 +26,7 @@ log = get_logger(__name__)
     required=True,
 )
 def main(mode: str) -> None:
-    config = parse_config(app="stream", mode=mode)
+    config = parse_config(app="transaction-service-stream-collector", mode=mode)
 
     spark = (
         SparkSession.builder.master("spark://spark-master:7077")

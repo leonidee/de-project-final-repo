@@ -31,15 +31,15 @@ run-consumer:
 		-f 'Key: %k\nValue: %s\nPartition: %p\nOffset: %o\nTimestamp: %T\n'
 
 # Spark cluster commands
-submit-streaming-job:
+submit-streaming-app:
 	docker exec -it spark-master \
 	bash -c \
 	"cd /app \
 	&& source /app/.venv/bin/activate \
 	&& /opt/bitnami/spark/bin/spark-submit \
 	--packages org.apache.spark:spark-streaming-kafka-0-10_2.12:3.4.1,org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.1 \
-	/app/src/stream/runner.py \
-	--mode=$(mode)"
+	/app/src/transaction_service_stream_collector/runner.py \
+	--mode=dev"
 
 
 submit-static-job:
@@ -48,5 +48,5 @@ submit-static-job:
 	"cd /app \
 	&& source /app/.venv/bin/activate \
 	&& /opt/bitnami/spark/bin/spark-submit \
-	/app/src/static/runner.py"
+	/app/src/static/runner.py --mode=dev"
 	

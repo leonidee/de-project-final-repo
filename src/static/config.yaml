@@ -1,0 +1,11 @@
+app:
+  name: static
+  prod:
+    input-path: s3a://data-ice-lake-05/prod/source/streaming-query
+    app-name: app
+  dev:
+    input-path: s3a://data-ice-lake-05/dev/source/streaming-query
+    app-name: app-dev
+  test:
+    input-path: s3a://data-ice-lake-05/test/source/streaming-query
+    app-name: app-test

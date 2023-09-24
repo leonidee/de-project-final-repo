@@ -9,18 +9,21 @@ import pyspark.sql.types as T
 from pyspark.sql.utils import AnalysisException
 from pyspark.storagelevel import StorageLevel
 
-from src.config import parse_config
-from src.logger import get_logger
+from src import get_logger, parse_config
 
 log = get_logger(__name__)
 
 TODAY = datetime.now()
 
+__all__ = ["get_query"]
+
 
 def get_query(
     spark: pyspark.sql.SparkSession, mode: str
 ) -> pyspark.sql.streaming.DataStreamWriter:
-    """Get Spark streaming query with data from specified in `config.yaml` kafka topic.
+    """Get transaction-service-stream-collector Spark `DataStreamWriter`.
+
+    Consume data from given in `config.yaml` kafka topic.
 
     ## Parameters
     `spark` : `pyspark.sql.SparkSession`
@@ -30,11 +33,11 @@ def get_query(
 
     ## Returns
     `pyspark.sql.streaming.DataStreamWriter`
-        DataStreamWrite object with results.
+        DataStreamWrite object with query results.
     """
     log.info(f"Getting streaming query with {mode=}")
 
-    config = parse_config(app="stream", mode=mode)
+    config = parse_config(app="transaction-service-stream-collector", mode=mode)
 
     frame: pyspark.sql.DataFrame = _read_stream(spark=spark, config=config)
 
