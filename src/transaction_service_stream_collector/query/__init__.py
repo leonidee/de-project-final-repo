@@ -205,17 +205,11 @@ def _write_dataframe(frame: pyspark.sql.DataFrame, path: str) -> ...:
     log.info(f"Wriring dataframe to {path=} path")
 
     try:
-        frame.write.parquet(
-            path=path,
-            mode="errorifexists",
-        )
+        frame.write.parquet(path=path, mode="errorifexists", compression="gzip")
         log.info(f"Done! Results -> {path=}")
 
     except AnalysisException as err:
         log.warning(f"Notice that {str(err)}. Overwriting")
 
-        frame.write.parquet(
-            path=path,
-            mode="overwrite",
-        )
+        frame.write.parquet(path=path, mode="overwrite", compression="gzip")
         log.info(f"Done! Results -> {path=}")
