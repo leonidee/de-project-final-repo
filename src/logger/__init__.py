@@ -35,7 +35,7 @@ def get_logger(name: str) -> Logger:
 
     if not handler:
         warnings.warn(
-            message="Logging check is not specified. "
+            message="Logging handler is not specified. "
             f"Default value will be used -> {DEFAULT_LOGGING_HANDLER}. "
             "If you want to change set handler as environment variable LOGGING_HANDLER",
             category=RuntimeWarning,
