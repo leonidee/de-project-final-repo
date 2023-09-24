@@ -2,9 +2,10 @@
 FROM docker.io/bitnami/spark:3.4.1-debian-11-r26
 
 ENV PYTHON_VERSION=3.11.5
+ENV APP_PATH=/app
 
 USER root
-WORKDIR /app
+WORKDIR $APP_PATH
 
 RUN apt-get update \
     && apt-get upgrade -y \
@@ -33,13 +34,13 @@ RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=/opt/poetry /opt/p
 ENV PATH="/opt/poetry/bin:$PATH"
 
 # Download certificate for yandex-cloud
-RUN curl "https://storage.yandexcloud.net/cloud-certs/CA.pem" -o /app/CA.pem
-RUN chmod 0600 /app/CA.pem
+RUN curl "https://storage.yandexcloud.net/cloud-certs/CA.pem" -o $APP_PATH/CA.pem
+RUN chmod 0600 $APP_PATH/CA.pem
 
 # Install dependensies
-COPY ./pyproject.toml /app/pyproject.toml
+COPY ./pyproject.toml $APP_PATH/pyproject.toml
 
-RUN cd /app \
+RUN cd $APP_PATH \
     && poetry env use /opt/python/python-$PYTHON_VERSION/bin/python3.11 \
     && source $(poetry env info --path)/bin/activate \
     && poetry install --only spark
