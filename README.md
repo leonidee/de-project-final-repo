@@ -1,5 +1,33 @@
 
 
+# Jobs
+
+Dev cycle, 
+
+```shell
+docker exec -it spark-master \
+	bash -c \
+	"cd /app \
+	&& source /app/.venv/bin/activate \
+	&& /opt/bitnami/spark/bin/spark-submit \
+	--packages org.apache.spark:spark-streaming-kafka-0-10_2.12:3.4.1,org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.1 \
+	/app/src/transaction_service_stream_collector/runner.py \
+	--mode=dev"
+```
+
+In test mode:
+
+```shell
+docker exec -it spark-master \
+	bash -c \
+	"cd /app \
+	&& source /app/.venv/bin/activate \
+	&& /opt/bitnami/spark/bin/spark-submit \
+	--packages org.apache.spark:spark-streaming-kafka-0-10_2.12:3.4.1,org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.1 \
+	/app/src/transaction_service_stream_collector/runner.py \
+	--mode=test"
+```
+
 
 
 # Services

@@ -2,22 +2,22 @@ app:
   name: transaction-service-stream-collector
   prod: &config
     topic: transaction-service-input
-    checkpoint-location: s3a://data-ice-lake-05/prod/source/spark-streaming-checkpoints/stream
-    output-path: s3a://data-ice-lake-05/prod/source/streaming-query
+    output-path: s3a://data-ice-lake-05/prod/source/transaction-service
     app-name: transaction-service-stream-collector-app
     query-name: transaction-service-stream-collector-query
+    checkpoint-location: s3a://data-ice-lake-05/prod/source/spark-streaming-checkpoints/transaction-service
     trigger:
       processing-time: 30 seconds
       offsets-per-trigger: 10000
   dev:
     <<: *config
-    checkpoint-location: s3a://data-ice-lake-05/dev/source/spark-streaming-checkpoints/stream
-    output-path: s3a://data-ice-lake-05/dev/source/streaming-query
-    app-name: transaction-service-stream-collector-dev
-    query-name: transaction-service-stream-collector-dev-query
+    output-path: s3a://data-ice-lake-05/dev/source/transaction-service
+    app-name: transaction-service-stream-collector-app
+    query-name: transaction-service-stream-collector-query
+    checkpoint-location: s3a://data-ice-lake-05/dev/source/spark-streaming-checkpoints/transaction-service
   test:
     <<: *config
-    checkpoint-location: s3a://data-ice-lake-05/test/source/spark-streaming-checkpoints/stream
-    output-path: s3a://data-ice-lake-05/test/source/streaming-query
-    app-name: transaction-service-stream-collector-test
-    query-name: transaction-service-stream-collector-test-query
+    output-path: s3a://data-ice-lake-05/test/source/transaction-service
+    app-name: transaction-service-stream-collector-app
+    query-name: transaction-service-stream-collector-query
+    checkpoint-location: s3a://data-ice-lake-05/test/source/spark-streaming-checkpoints/transaction-service
