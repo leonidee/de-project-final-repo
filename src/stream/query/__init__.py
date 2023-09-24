@@ -6,27 +6,63 @@ from os import getenv
 import pyspark
 import pyspark.sql.functions as F
 import pyspark.sql.types as T
-import yaml
 from pyspark.sql.utils import AnalysisException
 from pyspark.storagelevel import StorageLevel
 
 from src.logger import get_logger
+from src.stream.config import parse_config
 
 log = get_logger(__name__)
 
 TODAY = datetime.today()
 
-with open(f'{getenv("APP_PATH")}/config.yaml') as f:
-    config = yaml.safe_load(f)["stream"]
-
 
 def get_query(
     spark: pyspark.sql.SparkSession, mode: str
 ) -> pyspark.sql.streaming.DataStreamWriter:
+    """Get Spark streaming query with data from specified in `config.yaml` kafka topic.
+
+    ## Parameters
+    `spark` : `pyspark.sql.SparkSession`
+        Active Spark Session.
+    `mode` : `str`
+        In which mode to submit.
+
+    ## Returns
+    `pyspark.sql.streaming.DataStreamWriter`
+        DataStreamWrite object with results.
+    """
+    config = parse_config(mode=mode)
+
     frame: pyspark.sql.DataFrame = _read_stream(spark=spark, config=config)
+
+    def _foreach_batch_func(frame: pyspark.sql.DataFrame, batch_id: int) -> ...:
+        """Fucntion that will be executed on each batch of stream.
+
+        ## Parameters
+        `frame` : `pyspark.sql.DataFrame`
+            DataFrame to execute on.
+        `batch_id` : `int`
+            Batch id.
+        """
+        frame.persist(StorageLevel.MEMORY_ONLY)
+
+        _write_dataframe(
+            frame=frame.where(F.col("object_type") == "currency"),
+            path=f"{config['output-path']}/datekey={TODAY.strftime(r'%Y%m%d')}/object_type=currency/batch_id={batch_id}",
+        )
+
+        _write_dataframe(
+            frame=frame.where(F.col("object_type") == "transaction"),
+            path=f"{config['output-path']}/datekey={TODAY.strftime(r'%Y%m%d')}/object_type=transaction/batch_id={batch_id}",
+        )
+
+        frame.unpersist()
 
     match mode:
         case "dev":
+            frame.explain(mode="formatted")
+
             return (
                 frame.writeStream.format("console")
                 .outputMode("append")
@@ -51,6 +87,22 @@ def get_query(
 def _read_stream(
     spark: pyspark.sql.SparkSession, config: dict
 ) -> pyspark.sql.DataFrame:
+    """Read kafka topic and return batched DataFrame.
+
+    Tagret topic and other options should be speified in project config file `config.yaml`.
+
+    Kafka connection and security options should be set as env variables. For more information see `.env.template`
+
+    ## Parameters
+    `spark` : `pyspark.sql.SparkSession`
+        Active Spark Session.
+    `config` : `dict`
+        Dict with required job configurations.
+
+    ## Returns
+    `pyspark.sql.DataFrame`
+        Batched DataFrame.
+    """
     BOOTSTRAP_SERVER = (
         f"{getenv('YC_KAFKA_BROKER_HOST')}:{getenv('YC_KAFKA_BROKER_PORT')}"
     )
@@ -118,6 +170,15 @@ def _read_stream(
 
 
 def _write_dataframe(frame: pyspark.sql.DataFrame, path: str) -> ...:
+    """Write given DataFrame to S3 path.
+
+    ## Parameters
+    `frame` : `pyspark.sql.DataFrame`
+        DataFrame to write.
+    `path` : `str`
+        S3 path.
+    """
+
     log.info(f"Wriring dataframe to {path} path")
 
     try:
@@ -135,19 +196,3 @@ def _write_dataframe(frame: pyspark.sql.DataFrame, path: str) -> ...:
             mode="overwrite",
         )
         log.info(f"Done! Results -> {path}")
-
-
-def _foreach_batch_func(frame: pyspark.sql.DataFrame, batch_id: int) -> ...:
-    frame.persist(StorageLevel.MEMORY_ONLY)
-
-    _write_dataframe(
-        frame=frame.where(F.col("object_type") == "currency"),
-        path=f"{config['output-path']}/datekey={TODAY.strftime(r'%Y%m%d')}/object_type=currency/batch_id={batch_id}",
-    )
-
-    _write_dataframe(
-        frame=frame.where(F.col("object_type") == "transaction"),
-        path=f"{config['output-path']}/datekey={TODAY.strftime(r'%Y%m%d')}/object_type=transaction/batch_id={batch_id}",
-    )
-
-    frame.unpersist()

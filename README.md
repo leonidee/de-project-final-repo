@@ -52,21 +52,25 @@ yc managed-kafka user create $YC_KAFKA_USERNAME \
 
 ### Spark
 
-Up spark in docker containers with compose
+Up spark in docker containers with compose:
 
 ```shell
 docker compose up --build -d spark-master spark-worker-1 spark-worker-2 spark-worker-3 spark-worker-4
 ```
 
-```shell
-docker compose up --build -d
-```
-
-To see logs run
+To see logs run:
 
 ```shell
 docker logs spark-master --follow 
 ```
+
+
+Submit job:
+
+```shell
+make submit-job
+```
+
 
 
 # Else

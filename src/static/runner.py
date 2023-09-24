@@ -3,7 +3,6 @@ from __future__ import annotations
 import sys
 from os import getenv
 
-import click
 import dotenv
 import yaml
 from pyspark.sql import SparkSession
@@ -13,7 +12,6 @@ dotenv.load_dotenv()
 
 sys.path.append(getenv("APP_PATH"))
 from src.logger import get_logger
-from src.stream.query import get_query
 
 log = get_logger(__name__)
 
@@ -21,9 +19,15 @@ with open(f'{getenv("APP_PATH")}/config.yaml') as f:
     config = yaml.safe_load(f)["stream"]
 
 
-@click.command()
-@click.option("--mode", help="oif", type=str, default="dev", required=True)
-def main(mode: str) -> None:
+def read_data(spark):
+    df = spark.read.parquet(config["output-path"])
+
+    df.printSchema()
+
+    df.show(100, False)
+
+
+def main() -> None:
     spark = (
         SparkSession.builder.master("spark://spark-master:7077")
         .appName(config["app-name"])
@@ -38,10 +42,8 @@ def main(mode: str) -> None:
         .getOrCreate()
     )
 
-    query = get_query(spark=spark, mode=mode)
-
     try:
-        query.start().awaitTermination()
+        read_data(spark=spark)
     except (CapturedException, AnalysisException) as err:
         log.error(err)
         query.stop()  # type:ignore

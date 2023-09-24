@@ -1,9 +1,16 @@
 stream:
-  topic: transaction-service-input
-  checkpoint-location: s3a://data-ice-lake-05/master/data/source/spark-streaming-checkpoints
-  output-path: s3a://data-ice-lake-05/master/data/source/streaming-query
-  app-name: app
-  query-name: query
-  trigger:
-    processing-time: 30 seconds
-    offsets-per-trigger: 100
+  prod: &prod
+    topic: transaction-service-input
+    checkpoint-location: s3a://data-ice-lake-05/prod/source/spark-streaming-checkpoints/stream
+    output-path: s3a://data-ice-lake-05/prod/source/streaming-query
+    app-name: app
+    query-name: query
+    trigger:
+      processing-time: 30 seconds
+      offsets-per-trigger: 100
+  dev:
+    <<: *prod
+    checkpoint-location: s3a://data-ice-lake-05/dev/source/spark-streaming-checkpoints/stream
+    output-path: s3a://data-ice-lake-05/dev/source/streaming-query
+    app-name: app-dev
+    query-name: query-dev
