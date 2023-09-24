@@ -31,7 +31,7 @@ def get_query(
                 frame.writeStream.format("console")
                 .outputMode("append")
                 .queryName(config["query-name"])
-                .trigger(processingTime=config["processing-time"])
+                .trigger(processingTime=config["trigger"]["processing-time"])
                 .options(
                     truncate=False,
                     checkpointLocation=f'{config["checkpoint-location"]}/{config["app-name"]}/{config["query-name"]}',
@@ -40,7 +40,7 @@ def get_query(
         case "prod":
             return (
                 frame.writeStream.queryName(config["query-name"])
-                .trigger(processingTime=config["processing-time"])
+                .trigger(processingTime=config["trigger"]["processing-time"])
                 .foreachBatch(func=_foreach_batch_func)
                 .options(
                     checkpointLocation=f'{config["checkpoint-location"]}/{config["app-name"]}/{config["query-name"]}',
@@ -74,7 +74,7 @@ def _read_stream(
         "kafka.sasl.jaas.config": f'org.apache.kafka.common.security.scram.ScramLoginModule required username="{USERNAME}" password="{PASSWORD}";',
         "kafka.ssl.truststore.type": "PEM",
         "kafka.ssl.truststore.location": CERTIFICATE_PATH,
-        "maxOffsetsPerTrigger": "100",
+        "maxOffsetsPerTrigger": config["trigger"]["offsets-per-trigger"],
     }
 
     df = (
