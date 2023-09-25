@@ -55,14 +55,25 @@ def get_query(
         frame.persist(StorageLevel.MEMORY_ONLY)
 
         count: int = frame.count()
+        offsets_per_trigger: int = int(config["trigger"]["offsets-per-trigger"])
+
         log.info(f"Processed {count=} rows")
-        if count != int(config["trigger"]["offsets-per-trigger"]):
+        if count != offsets_per_trigger -1: 
             log.warning(
-                f"Processed row not equal to set offsets! {count=} offsets={config['trigger']['offsets-per-trigger']}"
+                f"Processed row not equal to configured offsets per trigger! {count=} {offsets_per_trigger=}"
             )
+        
+        frame = (
+            frame
+                .withColumns(dict(
+                    date=F.date(F.col('trigger_dttm')), #TODO AttributeError: module 'pyspark.sql.functions' has no attribute 'date'
+                    hour=F.hour(F.col('trigger_dttm')),
+                    batch_id=F.lit(batch_id),
+                ))
+        )
 
         if mode == "dev":
-            frame.show(100, False)
+            frame.show(100)
             frame.printSchema()
 
         _write_dataframe(
@@ -191,7 +202,7 @@ def _read_stream(
                 dict(
                     sent_dttm=F.to_timestamp(F.regexp_replace(F.col("sent_dttm"), "T", " "), r"yyyy-MM-dd HH:mm:ss"),
                     object_type=F.lower(F.col("object_type")),
-                    trigger_time=F.lit(datetime.now())
+                    trigger_dttm=F.lit(datetime.now())
                 )
             )
     )
@@ -199,11 +210,11 @@ def _read_stream(
     return (
         frame
             .drop_duplicates(
-                subset=['object_id','object_type','sent_dttm']
+                subset=config['deduplicate']['cols-subset']
             )
             .withWatermark(
-                eventTime="trigger_time",
-                delayThreshold="60 seconds"
+                eventTime="trigger_dttm",
+                delayThreshold=config['deduplicate']['delay-threshold']
             )
         )
 

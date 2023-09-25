@@ -49,6 +49,7 @@ def main(mode: str) -> None:
         query.stop()  # type:ignore
         spark.stop()
         sys.exit(1)
+        #TODO AttributeError: 'DataStreamWriter' object has no attribute 'stop'
 
 
 if __name__ == "__main__":

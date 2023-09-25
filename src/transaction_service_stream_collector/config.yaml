@@ -9,6 +9,9 @@ app:
     trigger:
       processing-time: 60 seconds
       offsets-per-trigger: 10000
+    deduplicate:
+      cols-subset: ["object_id", "object_type", "sent_dttm"]
+      delay-threshold: 60 seconds
   dev:
     <<: *config
     output-path: s3a://data-ice-lake-05/dev/source/transaction-service
