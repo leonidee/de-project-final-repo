@@ -7,7 +7,7 @@ app:
     query-name: transaction-service-stream-collector-query
     checkpoint-location: s3a://data-ice-lake-05/prod/source/spark-streaming-checkpoints/transaction-service
     trigger:
-      processing-time: 30 seconds
+      processing-time: 60 seconds
       offsets-per-trigger: 10000
   dev:
     <<: *config

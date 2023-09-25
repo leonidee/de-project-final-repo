@@ -18,7 +18,7 @@ TODAY = datetime.now()
 
 def collect_transaction_table(
     spark: pyspark.sql.SparkSession, mode: str, date: str, hour: str
-):
+) -> None:
     log.info(f"Collectin transaction DataFrame with {mode=} {date=} {hour=}")
 
     config = parse_config(app="transaction-service-clean-collector", mode=mode)
@@ -82,12 +82,14 @@ def collect_transaction_table(
     # todo в стрименге дропать дубликаты с watermart по полям send_dttm и objet_id ?
     frame.show(100, False)
 
+    log.info(f"ROWS COUNT ---> {frame.count()}")
+
     frame.explain(mode="formatted")
 
 
 def collect_currency_table(
     spark: pyspark.sql.SparkSession, mode: str, date: str, hour: str
-):
+) -> None:
     log.info(f"Collecting currency DataFrame with {mode=} {date=} {hour=}")
 
     config = parse_config(app="transaction-service-clean-collector", mode=mode)
@@ -129,5 +131,7 @@ def collect_currency_table(
     )
 
     frame.show(100, False)
+
+    log.info(f"ROWS COUNT ---> {frame.count()}")
 
     frame.explain(mode="formatted")

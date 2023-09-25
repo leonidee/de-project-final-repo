@@ -123,7 +123,7 @@ def _read_stream(
     `spark` : `pyspark.sql.SparkSession`
         Active Spark Session.
     `config` : `dict`
-        Dict with required job configurations.
+        Dict with job configurations.
 
     ## Returns
     `pyspark.sql.DataFrame`
@@ -158,7 +158,7 @@ def _read_stream(
         f"Subscribe to {config['topic']} kafka topic. Will consume {config['trigger']['offsets-per-trigger']} offsets per one trigger"
     )
 
-    df = (
+    frame = (
         spark.readStream.format("kafka")
         .options(**options)
         .load()
@@ -179,23 +179,34 @@ def _read_stream(
                 ),
             ),
         )
-        .select(
-            F.col("value.object_id").alias("object_id"),
-            F.col("value.object_type").alias("object_type"),
-            F.col("value.sent_dttm").alias("sent_dttm"),
-            F.col("value.payload").alias("payload"),
+            .withColumns(
+                dict(
+                    object_id=F.col("value.object_id"),
+                    object_type=F.col("value.object_type"),
+                    sent_dttm=F.col("value.sent_dttm"),
+                    payload=F.col("value.payload"),
+                )
         )
-        .withColumn(
-            "sent_dttm",
-            F.to_timestamp(
-                F.regexp_replace(F.col("sent_dttm"), "T", " "),
-                r"yyyy-MM-dd HH:mm:ss",
-            ),
-        )
-        .withColumn("object_type", F.lower(F.col("object_type")))
+            .withColumns(
+                dict(
+                    sent_dttm=F.to_timestamp(F.regexp_replace(F.col("sent_dttm"), "T", " "), r"yyyy-MM-dd HH:mm:ss"),
+                    object_type=F.lower(F.col("object_type")),
+                    trigger_time=F.lit(datetime.now())
+                )
+            )
     )
 
-    return df
+    return (
+        frame
+            .drop_duplicates(
+                subset=['object_id','object_type','sent_dttm']
+            )
+            .withWatermark(
+                eventTime="trigger_time",
+                delayThreshold="60 seconds"
+            )
+        )
+
 
 
 def _write_dataframe(frame: pyspark.sql.DataFrame, path: str) -> ...:
@@ -211,11 +222,13 @@ def _write_dataframe(frame: pyspark.sql.DataFrame, path: str) -> ...:
     log.info(f"Wriring dataframe to {path=} path")
 
     try:
+        # Raising error if target path already exists
         frame.write.parquet(path=path, mode="errorifexists", compression="gzip")
         log.info(f"Done! Results -> {path=}")
 
     except AnalysisException as err:
-        log.warning(f"Notice that {str(err)}. Overwriting")
+        # If path exist logging warning and appending 
+        log.warning(f"Notice that {str(err)}")
 
-        frame.write.parquet(path=path, mode="overwrite", compression="gzip")
+        frame.write.parquet(path=path, mode="append", compression="gzip")
         log.info(f"Done! Results -> {path=}")
