@@ -54,12 +54,16 @@ def get_query(
 
         frame.persist(StorageLevel.MEMORY_ONLY)
 
-        if mode == "dev":
-            frame.show(50, False)
-            frame.printSchema()
+        count: int = frame.count()
+        log.info(f"Processed {count=} rows")
+        if count != int(config["trigger"]["offsets-per-trigger"]):
+            log.warning(
+                f"Processed row not equal to set offsets! {count=} offsets={config['trigger']['offsets-per-trigger']}"
+            )
 
-            count: int = frame.count()
-            log.info(f"Processed {count} rows")
+        if mode == "dev":
+            frame.show(100, False)
+            frame.printSchema()
 
         _write_dataframe(
             frame=frame.where(F.col("object_type") == "currency"),
@@ -150,7 +154,9 @@ def _read_stream(
         "maxOffsetsPerTrigger": config["trigger"]["offsets-per-trigger"],
     }
 
-    log.info(f"Subscribe to {config['topic']} kafka topic")
+    log.info(
+        f"Subscribe to {config['topic']} kafka topic. Will consume {config['trigger']['offsets-per-trigger']} offsets per one trigger"
+    )
 
     df = (
         spark.readStream.format("kafka")
