@@ -9,7 +9,7 @@ x-spark-common: &spark-common
     dockerfile: docker/spark/Dockerfile
   environment: 
     - SPARK_MODE=worker
-    - SPARK_MASTER_URL=spark://spark-master:7077
+    - SPARK_MASTER_URL=${SPARK_MASTER_URL}
     - SPARK_WORKER_MEMORY=3G
     - SPARK_WORKER_CORES=2
     - SPARK_RPC_AUTHENTICATION_ENABLED=no

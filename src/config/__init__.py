@@ -40,9 +40,9 @@ def parse_config(
         config = yaml.safe_load(f)["app"]
 
     match mode:
-        case "dev":
+        case "DEV":
             return config["dev"]
-        case "prod":
+        case "PROD":
             return config["prod"]
-        case "test":
+        case "TEST":
             return config["test"]

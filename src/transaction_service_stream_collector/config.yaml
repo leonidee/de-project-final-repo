@@ -3,15 +3,16 @@ app:
   prod: &config
     topic: transaction-service-input
     output-path: s3a://data-ice-lake-05/prod/source/transaction-service
+    partitionby: ["object_type", "date", "hour", "batch_id"]
     app-name: transaction-service-stream-collector-app
     query-name: transaction-service-stream-collector-query
     checkpoint-location: s3a://data-ice-lake-05/prod/source/spark-streaming-checkpoints/transaction-service
     trigger:
-      processing-time: 60 seconds
+      processing-time: &processing-time 2 minutes
       offsets-per-trigger: 10000
     deduplicate:
       cols-subset: ["object_id", "object_type", "sent_dttm"]
-      delay-threshold: 60 seconds
+      delay-threshold: *processing-time
   dev:
     <<: *config
     output-path: s3a://data-ice-lake-05/dev/source/transaction-service

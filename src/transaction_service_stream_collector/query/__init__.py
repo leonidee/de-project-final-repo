@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from os import getenv
+from pprint import pformat
 
 import pyspark
 import pyspark.sql.functions as F
@@ -20,8 +21,8 @@ __all__ = ["get_query"]
 
 def get_query(
     spark: pyspark.sql.SparkSession, mode: str
-) -> pyspark.sql.streaming.DataStreamWriter:
-    """Get transaction-service-stream-collector Spark `DataStreamWriter`.
+) -> pyspark.sql.streaming.query.StreamingQuery:
+    """Get  streaming query for transaction-service-stream-collector application.
 
     Consume data from given in `config.yaml` kafka topic.
 
@@ -32,8 +33,8 @@ def get_query(
         In which mode to submit.
 
     ## Returns
-    `pyspark.sql.streaming.DataStreamWriter`
-        DataStreamWrite object with query results.
+    `pyspark.sql.streaming.query.StreamingQuery`
+        Resulting query object.
     """
     log.info(f"Getting streaming query with {mode=}")
 
@@ -57,39 +58,44 @@ def get_query(
         count: int = frame.count()
         offsets_per_trigger: int = int(config["trigger"]["offsets-per-trigger"])
 
-        log.info(f"Processed {count=} rows")
-        if count != offsets_per_trigger -1: 
+        log.info(f"Processed {count:_} rows")
+        if (
+            count != offsets_per_trigger - 1
+        ):  # Minus 1 because Spark use 1_000 offsets per trigger as 999
             log.warning(
                 f"Processed row not equal to configured offsets per trigger! {count=} {offsets_per_trigger=}"
             )
-        
-        frame = (
-            frame
-                .withColumns(dict(
-                    date=F.date(F.col('trigger_dttm')), #TODO AttributeError: module 'pyspark.sql.functions' has no attribute 'date'
-                    hour=F.hour(F.col('trigger_dttm')),
-                    batch_id=F.lit(batch_id),
-                ))
+
+        frame = frame.withColumns(
+            dict(
+                date=F.date_format(date=F.col("trigger_dttm"), format=r"yyyy-MM-dd"),
+                hour=F.hour(F.col("trigger_dttm")),
+                batch_id=F.lit(batch_id),
+            )
         )
 
-        if mode == "dev":
+        if mode == "DEV":
             frame.show(100)
             frame.printSchema()
 
-        _write_dataframe(
-            frame=frame.where(F.col("object_type") == "currency"),
-            path=f"{config['output-path']}/object_type=currency/date={TODAY.date().__str__()}/hour={TODAY.time().hour}:00/batch_id={batch_id}",
-        )
+        _write_dataframe(frame=frame, config=config)
 
-        _write_dataframe(
-            frame=frame.where(F.col("object_type") == "transaction"),
-            path=f"{config['output-path']}/object_type=transaction/date={TODAY.date().__str__()}/hour={TODAY.time().hour}:00/batch_id={batch_id}",
-        )
+        # _write_dataframe(
+        #     frame=frame.where(F.col("object_type") == "currency"),
+        #     path=f"{config['output-path']}",
+        # )
+
+        # _write_dataframe(
+        #     frame=frame.where(F.col("object_type") == "transaction"),
+        #     path=f"{config['output-path']}",
+        # )
 
         frame.unpersist()
 
     match mode:
-        case "dev":
+        case "DEV":
+            log.info("Query execution plan:\n")
+
             frame.explain(mode="formatted")
 
             return (
@@ -100,8 +106,9 @@ def get_query(
                     truncate=False,
                     checkpointLocation=f'{config["checkpoint-location"]}/{config["app-name"]}/{config["query-name"]}',
                 )
+                .start()
             )
-        case "test":
+        case "TEST":
             return (
                 frame.writeStream.queryName(config["query-name"])
                 .trigger(processingTime=config["trigger"]["processing-time"])
@@ -109,8 +116,9 @@ def get_query(
                 .options(
                     checkpointLocation=f'{config["checkpoint-location"]}/{config["app-name"]}/{config["query-name"]}',
                 )
+                .start()
             )
-        case "prod":
+        case "PROD":
             return (
                 frame.writeStream.queryName(config["query-name"])
                 .trigger(processingTime=config["trigger"]["processing-time"])
@@ -118,6 +126,7 @@ def get_query(
                 .options(
                     checkpointLocation=f'{config["checkpoint-location"]}/{config["app-name"]}/{config["query-name"]}',
                 )
+                .start()
             )
 
 
@@ -151,7 +160,9 @@ def _read_stream(
         raise ValueError(
             "Required environment varialbes not set. See .env.template for more details"
         )
-    log.info(f"Reading stream with given config -> {config=}")
+    log.info(
+        f"Reading stream with given config:\n {pformat(object=config, underscore_numbers=True)}"
+    )
 
     options = {
         "kafka.bootstrap.servers": BOOTSTRAP_SERVER,
@@ -166,7 +177,7 @@ def _read_stream(
     }
 
     log.info(
-        f"Subscribe to {config['topic']} kafka topic. Will consume {config['trigger']['offsets-per-trigger']} offsets per one trigger"
+        f"Subscribe to {config['topic']} kafka topic. Will consume {config['trigger']['offsets-per-trigger']:_} offsets per one trigger"
     )
 
     frame = (
@@ -190,37 +201,43 @@ def _read_stream(
                 ),
             ),
         )
-            .withColumns(
-                dict(
-                    object_id=F.col("value.object_id"),
-                    object_type=F.col("value.object_type"),
-                    sent_dttm=F.col("value.sent_dttm"),
-                    payload=F.col("value.payload"),
-                )
-        )
-            .withColumns(
-                dict(
-                    sent_dttm=F.to_timestamp(F.regexp_replace(F.col("sent_dttm"), "T", " "), r"yyyy-MM-dd HH:mm:ss"),
-                    object_type=F.lower(F.col("object_type")),
-                    trigger_dttm=F.lit(datetime.now())
-                )
+        .withColumns(
+            dict(
+                object_id=F.col("value.object_id"),
+                object_type=F.col("value.object_type"),
+                sent_dttm=F.col("value.sent_dttm"),
+                payload=F.col("value.payload"),
             )
+        )
+        .withColumns(
+            dict(
+                sent_dttm=F.to_timestamp(
+                    F.regexp_replace(F.col("sent_dttm"), "T", " "),
+                    r"yyyy-MM-dd HH:mm:ss",
+                ),
+                object_type=F.lower(F.col("object_type")),
+                trigger_dttm=F.lit(datetime.now()),
+            )
+        )
     )
 
     return (
-        frame
-            .drop_duplicates(
-                subset=config['deduplicate']['cols-subset']
-            )
-            .withWatermark(
-                eventTime="trigger_dttm",
-                delayThreshold=config['deduplicate']['delay-threshold']
-            )
+        frame.drop_duplicates(subset=config["deduplicate"]["cols-subset"])
+        .withWatermark(
+            eventTime="trigger_dttm",
+            delayThreshold=config["deduplicate"]["delay-threshold"],
         )
+        .select(
+            "object_id",
+            "object_type",
+            "sent_dttm",
+            "payload",
+            "trigger_dttm",
+        )
+    )
 
 
-
-def _write_dataframe(frame: pyspark.sql.DataFrame, path: str) -> ...:
+def _write_dataframe(frame: pyspark.sql.DataFrame, config: dict) -> ...:
     """Write given DataFrame to S3 path.
 
     ## Parameters
@@ -230,16 +247,29 @@ def _write_dataframe(frame: pyspark.sql.DataFrame, path: str) -> ...:
         S3 path.
     """
 
-    log.info(f"Wriring dataframe to {path=} path")
+    log.info(
+        f"Writing dataframe to {config['output-path']} path. Will partition by {config['partitionby']}"
+    )
 
-    try:
-        # Raising error if target path already exists
-        frame.write.parquet(path=path, mode="errorifexists", compression="gzip")
-        log.info(f"Done! Results -> {path=}")
+    # try:
+    #     # Raising error if target path already exists
+    #     frame.write.partitionBy(config["partitionby"]).parquet(
+    #         path={config["output-path"]}, mode="errorifexists", compression="gzip"
+    #     )
+    # log.info(f"Done! Results -> {path=}")
 
-    except AnalysisException as err:
-        # If path exist logging warning and appending 
-        log.warning(f"Notice that {str(err)}")
+    # except AnalysisException as err:
+    # If path exist log warning and appending results
+    # log.warning(f"Notice that {str(err)}")
 
-        frame.write.parquet(path=path, mode="append", compression="gzip")
-        log.info(f"Done! Results -> {path=}")
+    # frame.write.partitionBy(config["partitionby"]).parquet(
+    #     path={config["output-path"]}, mode="append", compression="gzip"
+    # )
+    # log.info(f"Done! Results -> {config['output-path']}")
+
+    frame.coalesce(1).write.partitionBy(config["partitionby"]).parquet(
+        path="s3a://data-ice-lake-05/dev/source/transaction-service",  # TODO почему не забирается из конфига?
+        mode="append",
+        compression="gzip",
+    )
+    log.info(f"Done! Results -> {config['output-path']}")

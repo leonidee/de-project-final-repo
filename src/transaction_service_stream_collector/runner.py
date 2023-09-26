@@ -4,7 +4,6 @@ from os import getenv
 import click
 import dotenv
 from pyspark.sql import SparkSession
-from pyspark.sql.utils import AnalysisException, CapturedException
 
 dotenv.load_dotenv()
 
@@ -20,11 +19,24 @@ log = get_logger(__name__)
 @click.option(
     "--mode",
     help="Job submition mode",
-    type=click.Choice(["prod", "test", "dev"], case_sensitive=True),
+    type=click.Choice(["PROD", "TEST", "DEV"], case_sensitive=True),
     required=True,
 )
-def main(mode: str) -> None:
+@click.option(
+    "--log-level",
+    help="Spark logging level",
+    type=click.Choice(
+        ["ALL", "DEBUG", "ERROR", "FATAL", "INFO", "OFF", "TRACE", "WARN"],
+        case_sensitive=True,
+    ),
+    required=True,
+)
+def main(mode: str, log_level: str) -> None:
     config = parse_config(app="transaction-service-stream-collector", mode=mode)
+
+    log.info(
+        f"Submitting {config['app-name']} application with {mode=} and {log_level=}"
+    )
 
     spark = (
         SparkSession.builder.master("spark://spark-master:7077")
@@ -39,17 +51,11 @@ def main(mode: str) -> None:
         )
         .getOrCreate()
     )
+    spark.sparkContext.setLogLevel(log_level.strip().capitalize())
 
     query = get_query(spark=spark, mode=mode)
 
-    try:
-        query.start().awaitTermination()
-    except (CapturedException, AnalysisException) as err:
-        log.error(err)
-        query.stop()  # type:ignore
-        spark.stop()
-        sys.exit(1)
-        #TODO AttributeError: 'DataStreamWriter' object has no attribute 'stop'
+    query.awaitTermination()
 
 
 if __name__ == "__main__":
