@@ -4,7 +4,7 @@
 
 ## transaction-service-stream-collector
 
-Dev cycle, 
+Submit application in `DEV` mode:
 
 ```shell
 docker exec -it spark-master \
@@ -12,22 +12,23 @@ docker exec -it spark-master \
 	"cd /app \
 	&& source /app/.venv/bin/activate \
 	&& /opt/bitnami/spark/bin/spark-submit \
+	--verbose \
+	--deploy-mode client \
+	--master spark://spark-master:7077 \
+	--driver-cores 2 \
+	--driver-memory 2G \
+	--executor-cores 1 \
+	--executor-memory 1500M \
+	--conf spark.dynamicAllocation.enabled=true \
+	--conf spark.dynamicAllocation.minExecutors=1 \
+	--conf spark.dynamicAllocation.maxExecutors=8 \
+	--conf spark.pyspark.python=/app/.venv/bin/python3.11 \
+	--conf spark.ui.enabled=false \
+	--conf spark.sql.adaptive.enabled=false \
 	--packages org.apache.spark:spark-streaming-kafka-0-10_2.12:3.4.1,org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.1 \
 	/app/src/transaction_service_stream_collector/runner.py \
-	--mode=dev"
-```
-
-In test mode:
-
-```shell
-docker exec -it spark-master \
-	bash -c \
-	"cd /app \
-	&& source /app/.venv/bin/activate \
-	&& /opt/bitnami/spark/bin/spark-submit \
-	--packages org.apache.spark:spark-streaming-kafka-0-10_2.12:3.4.1,org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.1 \
-	/app/src/transaction_service_stream_collector/runner.py \
-	--mode=test"
+	--mode=DEV \
+	--log-level=WARN"
 ```
 
 ## transaction-service-clean-collector
