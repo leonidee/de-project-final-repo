@@ -9,7 +9,7 @@ WORKDIR $APP_PATH
 
 RUN apt-get update \
     && apt-get upgrade -y \
-    && apt-get install -y curl build-essential gdb lcov pkg-config libbz2-dev \
+    && apt-get install -y curl htop build-essential gdb lcov pkg-config libbz2-dev \
     libffi-dev libgdbm-dev libgdbm-compat-dev liblzma-dev libncurses5-dev \
     libreadline6-dev libsqlite3-dev libssl-dev lzma lzma-dev tk-dev uuid-dev zlib1g-dev \
     && apt-get clean \
