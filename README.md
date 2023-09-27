@@ -4,6 +4,12 @@
 
 ## transaction-service-stream-collector
 
+Loading envvitonment variables into active shell session:
+
+```shell
+source .env
+```
+
 Submit application in `DEV` mode:
 
 ```shell
@@ -14,7 +20,7 @@ docker exec -it spark-master \
 	&& /opt/bitnami/spark/bin/spark-submit \
 	--verbose \
 	--deploy-mode client \
-	--master spark://spark-master:7077 \
+	--master $SPARK_MASTER_URL \
 	--driver-cores 2 \
 	--driver-memory 2G \
 	--executor-cores 1 \
