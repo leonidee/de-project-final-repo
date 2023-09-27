@@ -7,7 +7,6 @@ from pprint import pformat
 import pyspark
 import pyspark.sql.functions as F
 import pyspark.sql.types as T
-from pyspark.sql.utils import AnalysisException
 from pyspark.storagelevel import StorageLevel
 
 from src import get_logger, parse_config
@@ -51,19 +50,21 @@ def get_query(
         `batch_id` : `int`
             Batch id.
         """
-        log.info(f"Excecuting function for {batch_id=}")
+        stopwatch = datetime.now()
+
+        log.info(f"Excecuting for each batch function for {batch_id=}")
 
         frame.persist(StorageLevel.MEMORY_ONLY)
 
         count: int = frame.count()
-        offsets_per_trigger: int = int(config["trigger"]["offsets-per-trigger"])
+        offsets_per_trigger: int = int(config["kafka-options"]["offsets-per-trigger"])
 
         log.info(f"Processed {count:_} rows")
         if (
             count != offsets_per_trigger - 1
         ):  # Minus 1 because Spark use 1_000 offsets per trigger as 999
             log.warning(
-                f"Processed row not equal to configured offsets per trigger! {count=} {offsets_per_trigger=}"
+                f"Processed row not equal to configured offsets per trigger! {count=:_} {offsets_per_trigger=:_}"
             )
 
         frame = frame.withColumns(
@@ -80,17 +81,11 @@ def get_query(
 
         _write_dataframe(frame=frame, config=config)
 
-        # _write_dataframe(
-        #     frame=frame.where(F.col("object_type") == "currency"),
-        #     path=f"{config['output-path']}",
-        # )
-
-        # _write_dataframe(
-        #     frame=frame.where(F.col("object_type") == "transaction"),
-        #     path=f"{config['output-path']}",
-        # )
-
         frame.unpersist()
+
+        log.info(f"Batch {batch_id=} done! Execution time: {datetime.now() - stopwatch}")
+
+
 
     match mode:
         case "DEV":
@@ -167,17 +162,18 @@ def _read_stream(
     options = {
         "kafka.bootstrap.servers": BOOTSTRAP_SERVER,
         "startingOffsets": "earliest",
-        "subscribe": config["topic"],
+        "subscribe": config['kafka-options']["topic"],
         "kafka.security.protocol": "SASL_SSL",
         "kafka.sasl.mechanism": "SCRAM-SHA-512",
         "kafka.sasl.jaas.config": f'org.apache.kafka.common.security.scram.ScramLoginModule required username="{USERNAME}" password="{PASSWORD}";',
         "kafka.ssl.truststore.type": "PEM",
         "kafka.ssl.truststore.location": CERTIFICATE_PATH,
-        "maxOffsetsPerTrigger": config["trigger"]["offsets-per-trigger"],
+        "maxOffsetsPerTrigger": config["kafka-options"]["offsets-per-trigger"],
+        "minPartitions": config['kafka-options']['min-partitions']
     }
 
     log.info(
-        f"Subscribe to {config['topic']} kafka topic. Will consume {config['trigger']['offsets-per-trigger']:_} offsets per one trigger"
+        f"Subscribe to {config['kafka-options']['topic']} kafka topic. Will consume {config['kafka-options']['offsets-per-trigger']:_} offsets per one trigger"
     )
 
     frame = (
@@ -248,28 +244,12 @@ def _write_dataframe(frame: pyspark.sql.DataFrame, config: dict) -> ...:
     """
 
     log.info(
-        f"Writing dataframe to {config['output-path']} path. Will partition by {config['partitionby']}"
+        f"Writing dataframe to {config['output']['path']} path. Will partition by {config['output']['partitionby']}"
     )
 
-    # try:
-    #     # Raising error if target path already exists
-    #     frame.write.partitionBy(config["partitionby"]).parquet(
-    #         path={config["output-path"]}, mode="errorifexists", compression="gzip"
-    #     )
-    # log.info(f"Done! Results -> {path=}")
-
-    # except AnalysisException as err:
-    # If path exist log warning and appending results
-    # log.warning(f"Notice that {str(err)}")
-
-    # frame.write.partitionBy(config["partitionby"]).parquet(
-    #     path={config["output-path"]}, mode="append", compression="gzip"
-    # )
-    # log.info(f"Done! Results -> {config['output-path']}")
-
-    frame.coalesce(1).write.partitionBy(config["partitionby"]).parquet(
-        path="s3a://data-ice-lake-05/dev/source/transaction-service",  # TODO почему не забирается из конфига?
+    frame.coalesce(1).write.partitionBy(config['output']["partitionby"]).parquet(
+        path=config['output']['path'],
         mode="append",
         compression="gzip",
     )
-    log.info(f"Done! Results -> {config['output-path']}")
+    log.info(f"Done! Results -> {config['output']['path']}")

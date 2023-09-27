@@ -1,27 +1,43 @@
 app:
   name: transaction-service-stream-collector
   prod: &config
-    topic: transaction-service-input
-    output-path: s3a://data-ice-lake-05/prod/source/transaction-service
-    partitionby: ["object_type", "date", "hour", "batch_id"]
     app-name: transaction-service-stream-collector-app
     query-name: transaction-service-stream-collector-query
     checkpoint-location: s3a://data-ice-lake-05/prod/source/spark-streaming-checkpoints/transaction-service
+    output:
+      path: s3a://data-ice-lake-05/prod/source/transaction-service
+      partitionby: ["object_type", "date", "hour", "batch_id"]
     trigger:
       processing-time: &processing-time 2 minutes
-      offsets-per-trigger: 10000
     deduplicate:
+      # Streaming deduplication rules
+      # Columns subset by which should deduplicate
       cols-subset: ["object_id", "object_type", "sent_dttm"]
+      # Delay in which Spark will deduplicate listed columns
       delay-threshold: *processing-time
+    kafka-options:
+      # Topic subscribe to
+      topic: transaction-service-input
+      # Maximum number of offsets thath Spark should read per one trigger
+      offsets-per-trigger: 10000
+      # Total number of partitions that Spark can create from all kafka partitions
+      # Now its equal to total numbers of executors
+      min-partitions: 8
+
   dev:
     <<: *config
-    output-path: s3a://data-ice-lake-05/dev/source/transaction-service
     app-name: transaction-service-stream-collector-dev
     query-name: transaction-service-stream-collector-dev-query
     checkpoint-location: s3a://data-ice-lake-05/dev/source/spark-streaming-checkpoints/transaction-service
+    output:
+      path: s3a://data-ice-lake-05/dev/source/transaction-service
+      partitionby: ["object_type", "date", "hour", "batch_id"]
+
   test:
     <<: *config
-    output-path: s3a://data-ice-lake-05/test/source/transaction-service
     app-name: transaction-service-stream-collector-test
     query-name: transaction-service-stream-collector-test-query
     checkpoint-location: s3a://data-ice-lake-05/test/source/spark-streaming-checkpoints/transaction-service
+    output:
+      path: s3a://data-ice-lake-05/test/source/transaction-service
+      partitionby: ["object_type", "date", "hour", "batch_id"]
