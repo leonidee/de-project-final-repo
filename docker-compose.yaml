@@ -10,7 +10,7 @@ x-spark-common: &spark-common
   environment: 
     - SPARK_MODE=worker
     - SPARK_MASTER_URL=${SPARK_MASTER_URL}
-    - SPARK_WORKER_MEMORY=3G
+    - SPARK_WORKER_MEMORY=4G
     - SPARK_WORKER_CORES=2
     - SPARK_RPC_AUTHENTICATION_ENABLED=no
     - SPARK_RPC_ENCRYPTION_ENABLED=no
@@ -21,6 +21,9 @@ x-spark-common: &spark-common
     # can be found here -> https://spark.apache.org/docs/latest/spark-standalone.html#cluster-launch-scripts
   volumes:
     - .:/app/
+    - ./src:/app/src
+    - ./.env:/app/.env
+    - ./pyproject.toml:/app/pyproject.toml
     - ./configs/spark/log4j2.properties:/opt/bitnami/spark/conf/log4j2.properties
   restart: unless-stopped
   networks:

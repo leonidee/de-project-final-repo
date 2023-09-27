@@ -41,6 +41,7 @@ RUN chmod 0600 $APP_PATH/CA.pem
 COPY ./pyproject.toml $APP_PATH/pyproject.toml
 
 RUN cd $APP_PATH \
+    && poetry config virtualenvs.in-project true \
     && poetry env use /opt/python/python-$PYTHON_VERSION/bin/python3.11 \
-    && source $(poetry env info --path)/bin/activate \
+    && source $APP_PATH/.venv/bin/activate \
     && poetry install --only spark
