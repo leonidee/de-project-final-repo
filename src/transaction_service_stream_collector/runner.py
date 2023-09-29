@@ -4,6 +4,8 @@ from os import getenv
 import click
 import dotenv
 from pyspark.sql import SparkSession
+import time
+from pprint import pformat
 
 dotenv.load_dotenv()
 
@@ -39,7 +41,7 @@ def main(mode: str, log_level: str) -> None:
     )
 
     spark = (
-        SparkSession.builder.master("spark://spark-master:7077")
+        SparkSession.builder.master(getenv('SPARK_MASTER_URL'))
         .appName(config["app-name"])
         .config(
             map={
@@ -57,10 +59,29 @@ def main(mode: str, log_level: str) -> None:
 
     query.awaitTermination()
 
+    # while query.isActive:
+    #     log.info(f"Query heatbeat:\n{pformat(query.status)}\n{pformat(query.lastProgress)}")
+
+    #     if mode == "DEV":
+    #         log.info("Query execution plan:\n")
+    #         query.explain(extended=True)
+
+    #     err = query.exception()
+    #     if err:
+    #         log.error(f"Catch error {err}!")
+
+    #         query.stop()
+    #         spark.stop()
+
+    #         break
+
+    #     time.sleep(120)
+        
+
 
 if __name__ == "__main__":
     try:
-        main()
+        main() 
     except Exception as err:
         log.exception(err)
         sys.exit(2)

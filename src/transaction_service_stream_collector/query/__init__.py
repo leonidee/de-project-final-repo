@@ -89,9 +89,9 @@ def get_query(
 
     match mode:
         case "DEV":
-            log.info("Query execution plan:\n")
+            # log.info("Query execution plan:\n")
 
-            frame.explain(mode="formatted")
+            # frame.explain(mode="formatted")
 
             return (
                 frame.writeStream.queryName(config["query-name"])
