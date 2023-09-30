@@ -132,3 +132,7 @@ dmypy.json
 data
 *.pem
 *.ipynb
+
+# Airflow
+logs
+plugins

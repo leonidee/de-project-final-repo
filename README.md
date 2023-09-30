@@ -136,6 +136,16 @@ Submit job:
 make submit-job
 ```
 
+### Airflow
+
+```shell
+docker compose up airflow-init
+```
+
+```shell
+docker compose up airflow-webserver airflow-scheduler airflow-worker airflow-triggerer
+```
+
 
 
 # Else
