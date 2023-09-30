@@ -11,8 +11,7 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# USER airflow
-USER default
+USER airflow
 
 COPY ./requirements.txt $APP_PATH/requirements.txt
 

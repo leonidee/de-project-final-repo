@@ -1,4 +1,4 @@
-# from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
+from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 from airflow.operators.empty import EmptyOperator 
 from airflow import DAG
 from airflow.operators.bash import BashOperator
@@ -18,15 +18,8 @@ import getpass
 sys.path.append(str(Path(__file__).parent.parent))
 import os
 
-@task
-def test_test():
-    print(f"VERSION -> {sys.version}")
-    print(f"VERSION -> {sys.executable}")
-    print(f"USER -> {getpass.getuser()}")
-
-
 @dag(
-    dag_id="test-dag",
+    dag_id="testing-dag",
     schedule=None,
     start_date=datetime(2023, 9, 30),
     catchup=False,
@@ -41,14 +34,22 @@ def taskflow() -> ...:
 
     begin = EmptyOperator(task_id="begining")
 
-    test_job = BashOperator(
-        task_id='spark_job',
-        bash_command="sudo docker exec -it spark-master /bin/bash"
-        # bash_command="/opt/bitnami/spark/bin/spark-submit --verbose --deploy-mode client --master spark://spark-master:7077 /app/src/transaction_service_stream_collector/runner.py  --mode=DEV --log-level=WARN", 
+    spark_job = SparkSubmitOperator(
+        task_id='spark_submit_job',
+        application='/app/src/transaction_service_stream_collector/runner.py',  # It's a path inside of your Spark cluster  
+        name='airflow-spark',  # Name of your application
+        conn_id='spark_default',  # Your Spark connection
+        # conf={'master': 'spark://158.160.64.46:7077'},  # Make sure you point to your spark master, ensure 
     )
+
+    # test_job = BashOperator(
+    #     task_id='test_job',
+    #     bash_command="sudo docker exec -it spark-master /bin/bash",
+    #     # bash_command="/opt/bitnami/spark/bin/spark-submit --verbose --deploy-mode client --master spark://spark-master:7077 /app/src/transaction_service_stream_collector/runner.py  --mode=DEV --log-level=WARN", 
+    # )
 
     end = EmptyOperator(task_id="ending")
 
-    chain(begin, test_job, end)
+    chain(begin, end)
 
 taskflow()

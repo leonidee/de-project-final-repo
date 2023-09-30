@@ -5,8 +5,12 @@ app:
     query-name: transaction-service-stream-collector-query
     checkpoint-location: s3a://data-ice-lake-05/prod/source/spark-streaming-checkpoints/transaction-service
     output:
-      path: s3a://data-ice-lake-05/prod/source/transaction-service
-      partitionby: ["object_type", "date", "hour", "batch_id"]
+      stage:
+        path: s3a://data-ice-lake-05/prod/source/transaction-service
+        partitionby: ["object_type", "date", "hour", "batch_id"]
+      clean:
+        path: s3a://data-ice-lake-05/prod/clean/transaction-service
+        # partitionby: ["object_type", "date", "hour", "batch_id"]
     trigger:
       processing-time: &processing-time 2 minutes
     deduplicate:

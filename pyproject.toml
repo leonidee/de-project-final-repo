@@ -9,20 +9,13 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
+ipykernel = "^6.25.2"
 
 [tool.poetry.group.spark.dependencies]
 findspark = "2.0.1"
 python-dotenv = "1.0.0"
 click = "8.1.7"
 pyyaml = "6.0.1"
-
-
-[tool.poetry.group.airflow.dependencies]
-findspark = "2.0.1"
-python-dotenv = "1.0.0"
-click = "8.1.7"
-pyyaml = "6.0.1"
-pyspark = "3.4.1"
 
 
 [tool.poetry.group.dev.dependencies]

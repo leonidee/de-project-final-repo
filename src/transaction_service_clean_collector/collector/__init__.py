@@ -68,7 +68,7 @@ def collect_transaction_table(
                 ),
             )
         )
-        .drop_duplicates(subset=["operation_id", "transaction_dt", "status"])
+        # .drop_duplicates(subset=["operation_id", "transaction_dt", "status"])
         .select(
             "operation_id",
             "account_number_to",

@@ -18,6 +18,7 @@ TODAY = datetime.now()
 __all__ = ["get_query"]
 
 
+
 def get_query(
     spark: pyspark.sql.SparkSession, mode: str
 ) -> pyspark.sql.streaming.query.StreamingQuery:
@@ -41,14 +42,14 @@ def get_query(
 
     frame: pyspark.sql.DataFrame = _read_stream(spark=spark, config=config)
 
-    def _foreach_batch_func(frame: pyspark.sql.DataFrame, batch_id: int) -> ...:
+    def foreach_batch_func(frame: pyspark.sql.DataFrame, batch_id: int) -> ...:
         """Fucntion that will be executed on each batch of stream.
 
         ## Parameters
         `frame` : `pyspark.sql.DataFrame`
             DataFrame to execute on.
         `batch_id` : `int`
-            Batch id.
+            Batched DataFrame id.
         """
         stopwatch = datetime.now()
 
@@ -89,14 +90,13 @@ def get_query(
 
     match mode:
         case "DEV":
-            # log.info("Query execution plan:\n")
-
-            # frame.explain(mode="formatted")
+            log.info("Query execution plan:\n")
+            frame.explain(mode="formatted")
 
             return (
                 frame.writeStream.queryName(config["query-name"])
                 .trigger(processingTime=config["trigger"]["processing-time"])
-                .foreachBatch(func=_foreach_batch_func)
+                .foreachBatch(func=foreach_batch_func)
                 .options(
                     truncate=False,
                     checkpointLocation=f'{config["checkpoint-location"]}/{config["app-name"]}/{config["query-name"]}',
@@ -107,7 +107,7 @@ def get_query(
             return (
                 frame.writeStream.queryName(config["query-name"])
                 .trigger(processingTime=config["trigger"]["processing-time"])
-                .foreachBatch(func=_foreach_batch_func)
+                .foreachBatch(func=foreach_batch_func)
                 .options(
                     checkpointLocation=f'{config["checkpoint-location"]}/{config["app-name"]}/{config["query-name"]}',
                 )
@@ -117,7 +117,7 @@ def get_query(
             return (
                 frame.writeStream.queryName(config["query-name"])
                 .trigger(processingTime=config["trigger"]["processing-time"])
-                .foreachBatch(func=_foreach_batch_func)
+                .foreachBatch(func=foreach_batch_func)
                 .options(
                     checkpointLocation=f'{config["checkpoint-location"]}/{config["app-name"]}/{config["query-name"]}',
                 )

@@ -146,6 +146,8 @@ docker compose up airflow-init --build
 
 ```shell
 docker compose up -d airflow-webserver airflow-scheduler airflow-worker-1 airflow-triggerer
+
+docker compose up airflow-webserver airflow-scheduler airflow-worker-1 airflow-triggerer
 ```
 
 
@@ -185,6 +187,12 @@ sudo apt update && sudo apt install kafkacat -y
 
 
 # spark instalations
+
+Install java:
+
+```shell
+sudo apt-get update && sudo apt-get install -y default-jdk
+```
 
 ```shell
 cd /tmp && wget https://dlcdn.apache.org/spark/spark-3.4.1/spark-3.4.1-bin-hadoop3.tgz
