@@ -1,0 +1,6 @@
+findspark==2.0.1
+python-dotenv==1.0.0
+click==8.1.7
+pyyaml==6.0.1
+pyspark==3.4.1
+apache-airflow-providers-apache-spark==4.1.5

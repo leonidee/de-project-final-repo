@@ -121,6 +121,8 @@ Up spark in docker containers with compose:
 
 ```shell
 docker compose up --build -d spark-master spark-worker-1 spark-worker-2 spark-worker-3 spark-worker-4
+
+docker compose up spark-master spark-worker-1 spark-worker-2 spark-worker-3 spark-worker-4
 ```
 
 To see logs run:
@@ -139,11 +141,11 @@ make submit-job
 ### Airflow
 
 ```shell
-docker compose up airflow-init
+docker compose up airflow-init --build
 ```
 
 ```shell
-docker compose up airflow-webserver airflow-scheduler airflow-worker airflow-triggerer
+docker compose up -d airflow-webserver airflow-scheduler airflow-worker-1 airflow-triggerer
 ```
 
 
@@ -179,4 +181,32 @@ Install `kafkacat`
 
 ```shell
 sudo apt update && sudo apt install kafkacat -y
+```
+
+
+# spark instalations
+
+```shell
+cd /tmp && wget https://dlcdn.apache.org/spark/spark-3.4.1/spark-3.4.1-bin-hadoop3.tgz
+```
+
+```shell
+mkdir /opt/spark && tar zxvf ./spark-3.4.1-bin-hadoop3.tgz -C /opt/spark
+```
+
+
+```shell
+apt-get update && apt-get install -y procps
+```
+
+
+```shell
+python3 -m pip install apache-airflow-providers-apache-spark==4.1.5
+```
+
+?
+```shell
+echo "export SPARK_HOME=/opt/spark/spark-3.4.1-bin-hadoop3/bin" >> ~/.bashrc
+ 
+echo "export PATH=$PATH:$SPARK_HOME/bin:$SPARK_HOME/sbin" >> ~/.bashrc
 ```

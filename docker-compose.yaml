@@ -1,8 +1,5 @@
-# Adapted from official Airflow docker-compose.yaml
-# https://airflow.apache.org/docs/apache-airflow/2.5.2/docker-compose.yaml
-
----
 version: '3.8'
+
 x-airflow-common:
   &airflow-common
   build:
@@ -11,6 +8,8 @@ x-airflow-common:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    # For backward compatibility, with Airflow <2.3
+    AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
     AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
     AIRFLOW__CORE__FERNET_KEY: ''
@@ -26,7 +25,7 @@ x-airflow-common:
     - ./plugins:/opt/airflow/plugins
     - ./src:/opt/airflow/src
     - ./.env:/opt/airflow/.env
-    - ./config/airflow.cfg:/opt/airflow/airflow.cfg
+    - ./configs/airflow/airflow.cfg:/opt/airflow/airflow.cfg
   user: "${AIRFLOW_UID}:0"
   depends_on:
     &airflow-common-depends-on
@@ -35,9 +34,83 @@ x-airflow-common:
     postgres:
       condition: service_healthy
 
+x-spark-common: &spark-common
+  build: 
+    dockerfile: docker/spark/Dockerfile
+  environment: 
+    - SPARK_MODE=worker
+    - SPARK_MASTER_URL=${SPARK_MASTER_URL}
+    - SPARK_WORKER_MEMORY=4G
+    - SPARK_WORKER_CORES=2
+    - SPARK_RPC_AUTHENTICATION_ENABLED=no
+    - SPARK_RPC_ENCRYPTION_ENABLED=no
+    - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+    - SPARK_SSL_ENABLED=no
+    - SPARK_USER=${SPARK_USER}
+    # More environment variables natively supported by Apache Spark
+    # can be found here -> https://spark.apache.org/docs/latest/spark-standalone.html#cluster-launch-scripts
+  volumes:
+    - .:/app/
+    - ./src:/app/src
+    - ./.env:/app/.env
+    - ./pyproject.toml:/app/pyproject.toml
+    - ./configs/spark/log4j2.properties:/opt/bitnami/spark/conf/log4j2.properties
+  restart: unless-stopped
+
+
 services:
+  # Spark containers
+  spark-master:
+    <<: *spark-common
+    container_name: spark-master
+    environment:
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_USER=${SPARK_USER}
+    ports:
+      - "8080:8080"
+      - "7077:7077"
+
+  spark-worker-1:
+    <<: *spark-common
+    container_name: spark-worker-1
+    ports:
+      - "8081:8081"
+    depends_on:
+      - spark-master
+
+  spark-worker-2:
+    <<: *spark-common
+    container_name: spark-worker-2
+    ports:
+      - "8082:8081"
+    depends_on:
+      - spark-master
+
+  spark-worker-3:
+    <<: *spark-common
+    container_name: spark-worker-3
+    ports:
+      - "8083:8081"
+    depends_on:
+      - spark-master
+
+  spark-worker-4:
+    <<: *spark-common
+    container_name: spark-worker-4
+    ports:
+      - "8084:8081"
+    depends_on:
+      - spark-master
+
+  # Airflow containers
+  # Adapted from official Airflow docker-compose.yaml
   postgres:
     image: postgres:13
+    container_name: airflow-postgres
     environment:
       POSTGRES_USER: airflow
       POSTGRES_PASSWORD: airflow
@@ -51,6 +124,7 @@ services:
 
   redis:
     image: redis:latest
+    container_name: airflow-redis
     expose:
       - 6379
     healthcheck:
@@ -64,8 +138,9 @@ services:
   airflow-webserver:
     <<: *airflow-common
     command: webserver
+    container_name: airflow-webserver
     ports:
-      - "8080:8080"
+      - "9090:8080"
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 30s
@@ -81,6 +156,7 @@ services:
   airflow-scheduler:
     <<: *airflow-common
     command: scheduler
+    container_name: airflow-scheduler
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
       interval: 30s
@@ -93,9 +169,10 @@ services:
       airflow-init:
         condition: service_completed_successfully
 
-  airflow-worker:
+  airflow-worker-1:
     <<: *airflow-common
     command: celery worker
+    container_name: airflow-worker-1
     healthcheck:
       test:
         - "CMD-SHELL"
@@ -118,6 +195,7 @@ services:
   airflow-triggerer:
     <<: *airflow-common
     command: triggerer
+    container_name: airflow-triggerer
     healthcheck:
       test: ["CMD-SHELL", 'airflow jobs check --job-type TriggererJob --hostname "$${HOSTNAME}"']
       interval: 30s
@@ -133,6 +211,7 @@ services:
   airflow-init:
     <<: *airflow-common
     entrypoint: /bin/bash
+    container_name: airflow-init
     # yamllint disable rule:line-length
     command:
       - -c
@@ -199,7 +278,7 @@ services:
     # yamllint enable rule:line-length
     environment:
       <<: *airflow-common-env
-      _AIRFLOW_DB_UPGRADE: 'true'
+      _AIRFLOW_DB_MIGRATE: 'true'
       _AIRFLOW_WWW_USER_CREATE: 'true'
       _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
       _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
