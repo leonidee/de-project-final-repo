@@ -3,8 +3,12 @@ import warnings
 from logging import Formatter, Logger, StreamHandler, getLogger
 from os import getenv
 
+import dotenv
+
 DEFAULT_LOGGING_LEVEL = "INFO"
 DEFAULT_LOGGING_HANDLER = "console"
+
+dotenv.load_dotenv()
 
 
 def get_logger(name: str) -> Logger:

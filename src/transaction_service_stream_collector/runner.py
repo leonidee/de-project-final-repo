@@ -4,8 +4,6 @@ from os import getenv
 import click
 import dotenv
 from pyspark.sql import SparkSession
-import time
-from pprint import pformat
 
 dotenv.load_dotenv()
 
@@ -41,7 +39,7 @@ def main(mode: str, log_level: str) -> None:
     )
 
     spark = (
-        SparkSession.builder.master(getenv('SPARK_MASTER_URL'))
+        SparkSession.builder.master(getenv("SPARK_MASTER_URL"))
         .appName(config["app-name"])
         .config(
             map={
@@ -76,12 +74,11 @@ def main(mode: str, log_level: str) -> None:
     #         break
 
     #     time.sleep(120)
-        
 
 
 if __name__ == "__main__":
     try:
-        main() 
+        main()
     except Exception as err:
         log.exception(err)
         sys.exit(2)

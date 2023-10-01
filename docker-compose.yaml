@@ -50,7 +50,6 @@ x-spark-common: &spark-common
     # More environment variables natively supported by Apache Spark
     # can be found here -> https://spark.apache.org/docs/latest/spark-standalone.html#cluster-launch-scripts
   volumes:
-    - .:/app/
     - ./src:/app/src
     - ./.env:/app/.env
     - ./pyproject.toml:/app/pyproject.toml

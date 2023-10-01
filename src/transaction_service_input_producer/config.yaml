@@ -1,0 +1,11 @@
+app:
+  name: transaction-service-input-producer
+  prod: &config
+    topic: transaction-service-input
+    input-path:
+      currency: s3a://data-ice-lake-05/prod/source/transaction-service-dump/currency.gz.parquet
+      transactions: s3a://data-ice-lake-05/prod/source/transaction-service-dump/transactions.gz.parquet
+  dev:
+    <<: *config
+  test:
+    <<: *config

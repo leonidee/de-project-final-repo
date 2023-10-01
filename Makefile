@@ -30,4 +30,3 @@ run-consumer:
 		-C -o $(offset) -t $(topic) \
 		-f 'Key: %k\nValue: %s\nPartition: %p\nOffset: %o\nTimestamp: %T\n'
 
-

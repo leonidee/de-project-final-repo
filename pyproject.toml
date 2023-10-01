@@ -26,10 +26,11 @@ pyyaml = "6.0.1"
 s3fs = "^2023.9.2"
 pyarrow = "^13.0.0"
 
-[tool.poetry.group.producer-app.dependencies]
+[tool.poetry.group.transaction-service-input-producer.dependencies]
 kafka-python = "^2.0.2"
 python-dotenv = "1.0.0"
 pyyaml = "6.0.1"
 s3fs = "^2023.9.2"
 pyarrow = "^13.0.0"
 pandas = "2.1"
+click = "8.1.7"

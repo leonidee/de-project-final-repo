@@ -16,3 +16,11 @@ def get_uuid(obj: Iterable[Any] | Any) -> str:
             name=objs,
         )
     )
+
+
+def validate_path(path: str) -> bool:
+    """Check if given path is an S3 path"""
+    if "s3" in path:
+        return True
+    else:
+        return False

@@ -3,18 +3,26 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
+import click
 import dotenv
 
 sys.path.append(os.getenv("APP_PATH"))
 from src import get_logger
-from src.producer import processor
+from src.transaction_service_input_producer import processor
 
 log = get_logger(__name__)
 
 dotenv.load_dotenv()
 
 
-def main() -> None:
+@click.command()
+@click.option(
+    "--mode",
+    help="Job submition mode",
+    type=click.Choice(["PROD", "TEST", "DEV"], case_sensitive=True),
+    required=True,
+)
+def main(mode: str) -> None:
     log.info("Running data producer application")
     stopwatch = datetime.now()
 

@@ -5,12 +5,13 @@ app:
     query-name: transaction-service-stream-collector-query
     checkpoint-location: s3a://data-ice-lake-05/prod/source/spark-streaming-checkpoints/transaction-service
     output:
-      stage:
+      source:
         path: s3a://data-ice-lake-05/prod/source/transaction-service
         partitionby: ["object_type", "date", "hour", "batch_id"]
       clean:
-        path: s3a://data-ice-lake-05/prod/clean/transaction-service
-        # partitionby: ["object_type", "date", "hour", "batch_id"]
+        transaction-path: s3a://data-ice-lake-05/prod/clean/transaction-service/transaction
+        currency-path: s3a://data-ice-lake-05/prod/clean/transaction-service/currency
+        partitionby: ["date", "hour"]
     trigger:
       processing-time: &processing-time 2 minutes
     deduplicate:
@@ -34,8 +35,13 @@ app:
     query-name: transaction-service-stream-collector-dev-query
     checkpoint-location: s3a://data-ice-lake-05/dev/source/spark-streaming-checkpoints/transaction-service
     output:
-      path: s3a://data-ice-lake-05/dev/source/transaction-service
-      partitionby: ["object_type", "date", "hour", "batch_id"]
+      source:
+        path: s3a://data-ice-lake-05/dev/source/transaction-service
+        partitionby: ["object_type", "date", "hour", "batch_id"]
+      clean:
+        transaction-path: s3a://data-ice-lake-05/dev/clean/transaction-service/transaction
+        currency-path: s3a://data-ice-lake-05/dev/clean/transaction-service/currency
+        partitionby: ["date", "hour"]
 
   test:
     <<: *config
@@ -43,5 +49,10 @@ app:
     query-name: transaction-service-stream-collector-test-query
     checkpoint-location: s3a://data-ice-lake-05/test/source/spark-streaming-checkpoints/transaction-service
     output:
-      path: s3a://data-ice-lake-05/test/source/transaction-service
-      partitionby: ["object_type", "date", "hour", "batch_id"]
+      source:
+        path: s3a://data-ice-lake-05/test/source/transaction-service
+        partitionby: ["object_type", "date", "hour", "batch_id"]
+      clean:
+        transaction-path: s3a://data-ice-lake-05/test/clean/transaction-service/transaction
+        currency-path: s3a://data-ice-lake-05/test/clean/transaction-service/currency
+        partitionby: ["date", "hour"]

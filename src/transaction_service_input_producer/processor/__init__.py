@@ -8,10 +8,9 @@ from s3fs import S3FileSystem
 
 from src import get_logger, parse_config
 from src.clients import kafka
-from src.producer.utils import get_uuid
+from src.transaction_service_input_producer.utils import get_uuid, validate_path
 
 log = get_logger(__name__)
-# config = parse_config(app)
 
 s3 = S3FileSystem(
     key=getenv("S3_ACCESS_KEY_ID"),
@@ -22,11 +21,17 @@ s3 = S3FileSystem(
 producer = kafka.get_producer()
 
 
-def produce_currency_data() -> None:
-    path = "s3a://data-ice-lake-05/prod/source/transaction-service-dump/currency.gz.parquet"
-    topic = "transaction-service-input"
+def produce_currency_data(mode: str) -> None:
+    config = parse_config(app="transaction-service-input-producer", mode=mode)
+
+    path = config["input-path"]["currency"]
+    topic = config["topic"]
+
     OBJECT_TYPE = "CURRENCY"
     stopwatch = datetime.now()
+
+    if not validate_path(path):
+        raise ValueError("Path should be an S3 path")
 
     log.info(f"Starting producing data for {OBJECT_TYPE=} to {topic} topic")
 
@@ -60,11 +65,17 @@ def produce_currency_data() -> None:
     log.info(f"Done. Its took: {datetime.now() - stopwatch}. Sent {count} messages")
 
 
-def produce_transaction_data() -> None:
-    path = "s3a://data-ice-lake-05/prod/source/transaction-service-dump/transactions.gz.parquet"
-    topic = "transaction-service-input"
+def produce_transaction_data(mode: str) -> None:
+    config = parse_config(app="transaction-service-input-producer", mode=mode)
+
+    path = config["input-path"]["transactions"]
+    topic = config["topic"]
+
     OBJECT_TYPE = "TRANSACTION"
     stopwatch = datetime.now()
+
+    if not validate_path(path):
+        raise ValueError("Path should be an S3 path")
 
     log.info(f"Starting producing data for {OBJECT_TYPE=} to {topic} topic")
 

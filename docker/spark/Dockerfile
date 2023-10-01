@@ -35,7 +35,7 @@ ENV PATH="/opt/poetry/bin:$PATH"
 
 # Download certificate for yandex-cloud
 RUN curl "https://storage.yandexcloud.net/cloud-certs/CA.pem" -o $APP_PATH/CA.pem
-RUN chmod 0600 $APP_PATH/CA.pem
+RUN chmod +r $APP_PATH/CA.pem
 
 # Install dependensies
 COPY ./pyproject.toml $APP_PATH/pyproject.toml

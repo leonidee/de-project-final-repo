@@ -28,8 +28,8 @@ COPY ./.env /app/.env
 RUN cd /app \
     && poetry env use $(which python3) \
     && . $(poetry env info --path)/bin/activate \
-    && poetry install --only producer-app
+    && poetry install --only transaction-service-input-producer
 
 
 ENTRYPOINT ["/bin/sh", "-c"]
-CMD [". $(poetry env info --path)/bin/activate && python /app/src/producer/runner.py"]
+CMD [". $(poetry env info --path)/bin/activate && python /app/src/transaction_service_input_producer/runner.py --mode=PROD"]

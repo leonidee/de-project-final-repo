@@ -13,10 +13,7 @@ from src import get_logger, parse_config
 
 log = get_logger(__name__)
 
-TODAY = datetime.now()
-
 __all__ = ["get_query"]
-
 
 
 def get_query(
@@ -40,7 +37,7 @@ def get_query(
 
     config = parse_config(app="transaction-service-stream-collector", mode=mode)
 
-    frame: pyspark.sql.DataFrame = _read_stream(spark=spark, config=config)
+    frame: pyspark.sql.DataFrame = read_stream(spark=spark, config=config)
 
     def foreach_batch_func(frame: pyspark.sql.DataFrame, batch_id: int) -> ...:
         """Fucntion that will be executed on each batch of stream.
@@ -77,16 +74,17 @@ def get_query(
         )
 
         if mode == "DEV":
-            frame.show(100)
+            frame.show(100, truncate=False)
             frame.printSchema()
 
-        _write_dataframe(frame=frame, config=config)
+        collect_source_layer(frame=frame, config=config)
+        collect_clean_layer(frame=frame, config=config)
 
         frame.unpersist()
 
-        log.info(f"Batch {batch_id=} done! Execution time: {datetime.now() - stopwatch}")
-
-
+        log.info(
+            f"Batch {batch_id=} done! Execution time: {datetime.now() - stopwatch}"
+        )
 
     match mode:
         case "DEV":
@@ -125,9 +123,129 @@ def get_query(
             )
 
 
-def _read_stream(
-    spark: pyspark.sql.SparkSession, config: dict
-) -> pyspark.sql.DataFrame:
+def collect_source_layer(frame: pyspark.sql.DataFrame, config: dict) -> None:
+    config = config["output"]["source"]
+
+    log.info(
+        f"Writing dataframe to {config['path']} path. Will partition by {config['partitionby']}"
+    )
+
+    (
+        frame.coalesce(1)
+        .write.partitionBy(config["partitionby"])
+        .parquet(
+            path=config["path"],
+            mode="append",
+        )
+    )
+
+    log.info(f"Done! Results -> {config['path']}")
+
+
+def collect_clean_layer(frame: pyspark.sql.DataFrame, config: dict) -> None:
+    config = config["output"]["clean"]
+
+    log.info(
+        f"Collecting clean layer for transaction table. Will write dataframe to {config['transaction-path']} path and partition by {config['partitionby']}"
+    )
+
+    (
+        frame.where(F.col("object_type") == "transaction")
+        .withColumn(
+            "payload",
+            F.from_json(
+                F.col("payload"),
+                schema=T.StructType(
+                    [
+                        T.StructField("operation_id", T.StringType(), True),
+                        T.StructField("account_number_from", T.DoubleType(), True),
+                        T.StructField("account_number_to", T.DoubleType(), True),
+                        T.StructField("currency_code", T.IntegerType(), True),
+                        T.StructField("country", T.StringType(), True),
+                        T.StructField("status", T.StringType(), True),
+                        T.StructField("transaction_type", T.StringType(), True),
+                        T.StructField("transaction_dt", T.StringType(), True),
+                    ]
+                ),
+            ),
+        )
+        .withColumns(
+            dict(
+                operation_id="payload.operation_id",
+                account_number_from="payload.account_number_from",
+                account_number_to="payload.account_number_to",
+                currency_code="payload.currency_code",
+                country="payload.country",
+                status="payload.status",
+                transaction_type="payload.transaction_type",
+                transaction_dt=F.to_timestamp(
+                    F.col("payload.transaction_dt"), r"yyyy-MM-dd HH:mm:ss"
+                ),
+            )
+        )
+        .select(
+            "operation_id",
+            "account_number_from",
+            "account_number_to",
+            "currency_code",
+            "country",
+            "status",
+            "transaction_type",
+            "transaction_dt",
+            "trigger_dttm",
+            "date",
+            "hour",
+        )
+    ).coalesce(1).write.partitionBy(config["partitionby"]).parquet(
+        path=config["transaction-path"], mode="append"
+    )
+
+    log.info(
+        f"Collecting clean layer for currency table. Will write dataframe to {config['currency-path']} path and partition by {config['partitionby']}"
+    )
+
+    (
+        frame.where(F.col("object_type") == "currency")
+        .withColumn(
+            "payload",
+            F.from_json(
+                F.col("payload"),
+                schema=T.StructType(
+                    [
+                        T.StructField("date_update", T.StringType(), True),
+                        T.StructField("currency_code", T.IntegerType(), True),
+                        T.StructField("currency_code_with", T.IntegerType(), True),
+                        T.StructField("currency_with_div", T.FloatType(), True),
+                    ]
+                ),
+            ),
+        )
+        .withColumns(
+            dict(
+                date_update=F.to_timestamp(
+                    F.col("payload.date_update"), r"yyyy-MM-dd HH:mm:ss"
+                ),
+                currency_code="payload.currency_code",
+                currency_code_with="payload.currency_code_with",
+                currency_with_div="payload.currency_with_div",
+            )
+        )
+        .select(
+            "object_id",
+            "date_update",
+            "currency_code",
+            "currency_code_with",
+            "currency_with_div",
+            "trigger_dttm",
+            "date",
+            "hour",
+        )
+    ).coalesce(1).write.partitionBy(config["partitionby"]).parquet(
+        path=config["currency-path"], mode="append"
+    )
+
+
+def read_stream(spark: pyspark.sql.SparkSession, config: dict) -> pyspark.sql.DataFrame:
     """Read kafka topic and return batched DataFrame.
 
     Tagret topic and other options should be speified in project config file `config.yaml`.
@@ -149,9 +267,9 @@ def _read_stream(
     )
     USERNAME = getenv("YC_KAFKA_USERNAME")
     PASSWORD = getenv("YC_KAFKA_PASSWORD")
-    CERTIFICATE_PATH = f'{getenv("APP_PATH")}/CA.pem'
+    CERTIFICATE_PATH = f'{getenv("CERTIFICATE_PATH")}'
 
-    if not all([BOOTSTRAP_SERVER, USERNAME, PASSWORD]):
+    if not all([BOOTSTRAP_SERVER, USERNAME, PASSWORD, CERTIFICATE_PATH]):
         raise ValueError(
             "Required environment varialbes not set. See .env.template for more details"
         )
@@ -162,14 +280,15 @@ def _read_stream(
     options = {
         "kafka.bootstrap.servers": BOOTSTRAP_SERVER,
         "startingOffsets": "earliest",
-        "subscribe": config['kafka-options']["topic"],
+        "subscribe": config["kafka-options"]["topic"],
         "kafka.security.protocol": "SASL_SSL",
         "kafka.sasl.mechanism": "SCRAM-SHA-512",
         "kafka.sasl.jaas.config": f'org.apache.kafka.common.security.scram.ScramLoginModule required username="{USERNAME}" password="{PASSWORD}";',
         "kafka.ssl.truststore.type": "PEM",
         "kafka.ssl.truststore.location": CERTIFICATE_PATH,
         "maxOffsetsPerTrigger": config["kafka-options"]["offsets-per-trigger"],
-        "minPartitions": config['kafka-options']['min-partitions']
+        "minPartitions": config["kafka-options"]["min-partitions"],
+        "failOnDataLoss": False,
     }
 
     log.info(
@@ -231,25 +350,3 @@ def _read_stream(
             "trigger_dttm",
         )
     )
-
-
-def _write_dataframe(frame: pyspark.sql.DataFrame, config: dict) -> ...:
-    """Write given DataFrame to S3 path.
-
-    ## Parameters
-    `frame` : `pyspark.sql.DataFrame`
-        DataFrame to write.
-    `path` : `str`
-        S3 path.
-    """
-
-    log.info(
-        f"Writing dataframe to {config['output']['path']} path. Will partition by {config['output']['partitionby']}"
-    )
-
-    frame.coalesce(1).write.partitionBy(config['output']["partitionby"]).parquet(
-        path=config['output']['path'],
-        mode="append",
-        compression="gzip",
-    )
-    log.info(f"Done! Results -> {config['output']['path']}")

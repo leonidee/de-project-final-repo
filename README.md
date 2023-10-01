@@ -224,15 +224,20 @@ echo "export PATH=$PATH:$SPARK_HOME/bin:$SPARK_HOME/sbin" >> ~/.bashrc
 ```
 
 
-
 # Producer 
 
 ```shell
-docker build -f docker/producer/Dockerfile -t producer-app:v20231001-r1.0 .
+export APP_NAME=transaction-service-input-producer \
+	&& export APP_RELEASE=v20231001-r1.1
 ```
 
 ```shell
-docker run --name producer-app producer-app:v20231001-r1.0
+docker build -f docker/producer/Dockerfile -t $APP_NAME:$APP_RELEASE .
 ```
+
+```shell
+docker run -it --rm --name transaction-service-input-producer $APP_NAME:$APP_RELEASE
+```
+
 
 

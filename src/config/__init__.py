@@ -10,7 +10,8 @@ log = get_logger(__name__)
 
 def parse_config(
     app: Literal[
-        "transaction-service-stream-collector", "transaction-service-clean-collector"
+        "transaction-service-stream-collector",
+        "transaction-service-input-producer",
     ],
     mode: str,
 ) -> dict[str, str | int]:
@@ -31,8 +32,8 @@ def parse_config(
     match app:
         case "transaction-service-stream-collector":
             config_path = f"{getenv('APP_PATH')}/src/transaction_service_stream_collector/config.yaml"
-        case "transaction-service-clean-collector":
-            config_path = f"{getenv('APP_PATH')}/src/transaction_service_clean_collector/config.yaml"
+        case "transaction-service-input-producer":
+            config_path = f"{getenv('APP_PATH')}/src/transaction_service_input_producer/config.yaml"
 
     log.info(f"Loading {config_path=}")
 
