@@ -22,9 +22,9 @@ docker exec -it spark-master \
 	--deploy-mode client \
 	--master $SPARK_MASTER_URL \
 	--driver-cores 2 \
-	--driver-memory 2G \
+	--driver-memory 4G \
 	--executor-cores 1 \
-	--executor-memory 1500M \
+	--executor-memory 2G \
 	--conf spark.dynamicAllocation.enabled=true \
 	--conf spark.dynamicAllocation.minExecutors=1 \
 	--conf spark.dynamicAllocation.maxExecutors=8 \
@@ -185,6 +185,10 @@ Install `kafkacat`
 sudo apt update && sudo apt install kafkacat -y
 ```
 
+```shell
+make run-consumer topic=transaction-service-input offset=begining
+```
+
 
 # spark instalations
 
@@ -218,3 +222,17 @@ echo "export SPARK_HOME=/opt/spark/spark-3.4.1-bin-hadoop3/bin" >> ~/.bashrc
  
 echo "export PATH=$PATH:$SPARK_HOME/bin:$SPARK_HOME/sbin" >> ~/.bashrc
 ```
+
+
+
+# Producer 
+
+```shell
+docker build -f docker/producer/Dockerfile -t producer-app:v20231001-r1.0 .
+```
+
+```shell
+docker run --name producer-app producer-app:v20231001-r1.0
+```
+
+
