@@ -331,7 +331,7 @@ def read_stream(spark: pyspark.sql.SparkSession, config: dict) -> pyspark.sql.Da
                     r"yyyy-MM-dd HH:mm:ss",
                 ),
                 object_type=F.lower(F.col("object_type")),
-                trigger_dttm=F.lit(datetime.now()),
+                trigger_dttm=F.lit(datetime.utcnow()),
             )
         )
     )
