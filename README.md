@@ -120,8 +120,6 @@ yc managed-kafka user create $YC_KAFKA_USERNAME \
 Up spark in docker containers with compose:
 
 ```shell
-docker compose up --build -d spark-master spark-worker-1 spark-worker-2 spark-worker-3 spark-worker-4
-
 docker compose up -d spark-master spark-worker-1 spark-worker-2 spark-worker-3 spark-worker-4
 ```
 

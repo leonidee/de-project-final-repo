@@ -1,8 +1,6 @@
 version: '3.8'
 
 x-spark-common: &spark-common
-  # build: 
-    # dockerfile: docker/spark/Dockerfile
   image: spark:v20231002-r1.0
   environment: 
     - SPARK_MODE=worker

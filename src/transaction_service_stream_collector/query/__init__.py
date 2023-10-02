@@ -67,6 +67,7 @@ def get_query(
 
         frame = frame.withColumns(
             dict(
+                trigger_dttm=F.lit(datetime.utcnow()),
                 date=F.date_format(date=F.col("trigger_dttm"), format=r"yyyy-MM-dd"),
                 hour=F.hour(F.col("trigger_dttm")),
                 batch_id=F.lit(batch_id),
@@ -331,7 +332,6 @@ def read_stream(spark: pyspark.sql.SparkSession, config: dict) -> pyspark.sql.Da
                     r"yyyy-MM-dd HH:mm:ss",
                 ),
                 object_type=F.lower(F.col("object_type")),
-                trigger_dttm=F.lit(datetime.utcnow()),
             )
         )
     )
@@ -339,7 +339,7 @@ def read_stream(spark: pyspark.sql.SparkSession, config: dict) -> pyspark.sql.Da
     return (
         frame.drop_duplicates(subset=config["deduplicate"]["cols-subset"])
         .withWatermark(
-            eventTime="trigger_dttm",
+            eventTime="sent_dttm",
             delayThreshold=config["deduplicate"]["delay-threshold"],
         )
         .select(
@@ -347,6 +347,5 @@ def read_stream(spark: pyspark.sql.SparkSession, config: dict) -> pyspark.sql.Da
             "object_type",
             "sent_dttm",
             "payload",
-            "trigger_dttm",
         )
     )
