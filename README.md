@@ -122,7 +122,7 @@ Up spark in docker containers with compose:
 ```shell
 docker compose up --build -d spark-master spark-worker-1 spark-worker-2 spark-worker-3 spark-worker-4
 
-docker compose up spark-master spark-worker-1 spark-worker-2 spark-worker-3 spark-worker-4
+docker compose up -d spark-master spark-worker-1 spark-worker-2 spark-worker-3 spark-worker-4
 ```
 
 To see logs run:
@@ -130,6 +130,7 @@ To see logs run:
 ```shell
 docker logs spark-master --follow 
 ```
+
 
 
 Submit job:
@@ -154,24 +155,7 @@ docker compose up airflow-webserver airflow-scheduler airflow-worker-1 airflow-t
 
 # Else
 
-Register kafka topic in transaction service to get messages
 
-```shell
-curl -X POST https://order-gen-service.sprint9.tgcloudenv.ru/project/register_kafka \
--H 'Content-Type: application/json; charset=utf-8' \
---data-binary @- << EOF
-{
-    "student": "$YP_LOGIN",
-    "kafka_connect":{
-        "host": "$YC_KAFKA_BROKER_HOST",
-        "port": 9091,
-        "topic": "$TOPIC_NAME",
-        "producer_name": "$YC_KAFKA_USERNAME",
-        "producer_password": "$YC_KAFKA_PASSWORD"
-    }
-}
-EOF
-```
 Download certificate to work with Yandex cloud
 
 ```shell
@@ -228,7 +212,7 @@ echo "export PATH=$PATH:$SPARK_HOME/bin:$SPARK_HOME/sbin" >> ~/.bashrc
 
 ```shell
 export APP_NAME=transaction-service-input-producer \
-	&& export APP_RELEASE=v20231001-r1.1
+	&& export APP_RELEASE=v$(date +"%Y%m%d")-r1.0
 ```
 
 ```shell
@@ -240,4 +224,19 @@ docker run -it --rm --name transaction-service-input-producer $APP_NAME:$APP_REL
 ```
 
 
+
+# Spark 
+
+```shell
+export APP_NAME=spark \
+	&& export APP_RELEASE=v$(date +"%Y%m%d")-r1.0
+```
+
+```shell
+docker build -f docker/spark/Dockerfile -t $APP_NAME:$APP_RELEASE .
+```
+
+```shell
+docker images | grep "spark"
+```
 

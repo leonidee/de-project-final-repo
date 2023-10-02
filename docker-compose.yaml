@@ -1,5 +1,28 @@
 version: '3.8'
 
+x-spark-common: &spark-common
+  # build: 
+    # dockerfile: docker/spark/Dockerfile
+  image: spark:v20231002-r1.0
+  environment: 
+    - SPARK_MODE=worker
+    - SPARK_MASTER_URL=${SPARK_MASTER_URL}
+    - SPARK_WORKER_MEMORY=4G
+    - SPARK_WORKER_CORES=2
+    - SPARK_RPC_AUTHENTICATION_ENABLED=no
+    - SPARK_RPC_ENCRYPTION_ENABLED=no
+    - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+    - SPARK_SSL_ENABLED=no
+    - SPARK_USER=${SPARK_USER}
+    # More environment variables natively supported by Apache Spark
+    # can be found here -> https://spark.apache.org/docs/latest/spark-standalone.html#cluster-launch-scripts
+  volumes:
+    - ./src:/app/src
+    - ./.env:/app/.env
+    - ./pyproject.toml:/app/pyproject.toml
+    - ./configs/spark/log4j2.properties:/opt/bitnami/spark/conf/log4j2.properties
+  restart: unless-stopped
+
 x-airflow-common:
   &airflow-common
   build:
@@ -33,28 +56,6 @@ x-airflow-common:
       condition: service_healthy
     postgres:
       condition: service_healthy
-
-x-spark-common: &spark-common
-  build: 
-    dockerfile: docker/spark/Dockerfile
-  environment: 
-    - SPARK_MODE=worker
-    - SPARK_MASTER_URL=${SPARK_MASTER_URL}
-    - SPARK_WORKER_MEMORY=4G
-    - SPARK_WORKER_CORES=2
-    - SPARK_RPC_AUTHENTICATION_ENABLED=no
-    - SPARK_RPC_ENCRYPTION_ENABLED=no
-    - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-    - SPARK_SSL_ENABLED=no
-    - SPARK_USER=${SPARK_USER}
-    # More environment variables natively supported by Apache Spark
-    # can be found here -> https://spark.apache.org/docs/latest/spark-standalone.html#cluster-launch-scripts
-  volumes:
-    - ./src:/app/src
-    - ./.env:/app/.env
-    - ./pyproject.toml:/app/pyproject.toml
-    - ./configs/spark/log4j2.properties:/opt/bitnami/spark/conf/log4j2.properties
-  restart: unless-stopped
 
 
 services:
