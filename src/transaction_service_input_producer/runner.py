@@ -27,8 +27,8 @@ def main(mode: str) -> None:
     stopwatch = datetime.now()
 
     with ThreadPoolExecutor(max_workers=2) as executor:
-        executor.submit(processor.produce_currency_data)
-        executor.submit(processor.produce_transaction_data)
+        executor.submit(processor.produce_currency_data, mode)
+        executor.submit(processor.produce_transaction_data, mode)
 
     log.info(f"Done! Its took: {datetime.now() - stopwatch}")
 
