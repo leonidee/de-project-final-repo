@@ -26,7 +26,7 @@ S3_ENDPOINT_URL = S3_ENDPOINT_URL.split("https://")[
 ]  # Because Vertica expect not URL but just address: storage.yandexcloud.net
 
 
-def give_me_name(processing_dttm: datetime | None = None):
+def merge_into_transaction(processing_dttm: datetime | None = None):
     conn = vertica.get_connection()
 
     cur = conn.cursor()
@@ -62,19 +62,58 @@ def give_me_name(processing_dttm: datetime | None = None):
     )
 
     cur.execute(
-        operation="""
+        operation=f"""
             COPY LEONIDGRISHENKOVYANDEXRU__STAGING.transaction_temp
                 FROM
-                    's3a://data-ice-lake-05/dev/clean/transaction-service/transaction/date=2023-10-02/hour=16/*'
+                    's3a://data-ice-lake-05/dev/clean/transaction-service/transaction/date={processing_dttm.date()}/hour={processing_dttm.hour}/*'
                     PARQUET;
         """
     )
 
-    query = """ 
-        SELECT count(*)
-        FROM LEONIDGRISHENKOVYANDEXRU__STAGING.transaction_temp
-    """
+    cur.execute(
+        operation="""
+            MERGE
+            INTO LEONIDGRISHENKOVYANDEXRU__STAGING.transaction AS tgt
+            USING LEONIDGRISHENKOVYANDEXRU__STAGING.transaction_temp AS src
+            ON (tgt.operation_id = src.operation_id AND tgt.status = src.status)
+            WHEN MATCHED THEN
+                UPDATE
+                SET
+                    account_number_from = src.account_number_from,
+                    account_number_to = src.account_number_to,
+                    currency_code = src.currency_code,
+                    country = src.country,
+                    transaction_type = src.transaction_type,
+                    transaction_dt = src.transaction_dt,
+                    trigger_dttm = src.trigger_dttm,
+                    update_dttm = now()
+            WHEN NOT MATCHED THEN
+                INSERT (operation_id,
+                        account_number_from,
+                        account_number_to,
+                        currency_code,
+                        country,
+                        status,
+                        transaction_type,
+                        transaction_dt,
+                        trigger_dttm, update_dttm)
+                VALUES
+                    (src.operation_id, src.account_number_from, src.account_number_to, src.currency_code, src.country, src.status, src.transaction_type,
+                    src.transaction_dt,
+                    src.trigger_dttm, now());
+         """
+    )
 
-    data = cur.execute(query).fetchone()
 
-    print(data)
+def merge_into_currency(processing_dttm: datetime) -> None:
+    conn = vertica.get_connection()
+
+    cur = conn.cursor()
+
+    cur.execute(
+        operation=f"""
+            ALTER SESSION SET AWSRegion='{S3_REGION}';
+            ALTER SESSION SET AWSEndpoint='{S3_ENDPOINT_URL}';
+            ALTER SESSION SET AWSAuth='{S3_ACCESS_KEY_ID}:{S3_SECRET_ACCESS_KEY}';
+        """
+    )
