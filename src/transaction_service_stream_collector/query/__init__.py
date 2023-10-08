@@ -132,7 +132,7 @@ def collect_source_layer(frame: pyspark.sql.DataFrame, config: dict) -> None:
     )
 
     (
-        frame.coalesce(1)
+        frame.coalesce(8)
         .write.partitionBy(config["partitionby"])
         .parquet(
             path=config["path"],
@@ -159,13 +159,14 @@ def collect_clean_layer(frame: pyspark.sql.DataFrame, config: dict) -> None:
                 schema=T.StructType(
                     [
                         T.StructField("operation_id", T.StringType(), True),
-                        T.StructField("account_number_from", T.DoubleType(), True),
-                        T.StructField("account_number_to", T.DoubleType(), True),
+                        T.StructField("account_number_from", T.LongType(), True),
+                        T.StructField("account_number_to", T.LongType(), True),
                         T.StructField("currency_code", T.IntegerType(), True),
                         T.StructField("country", T.StringType(), True),
                         T.StructField("status", T.StringType(), True),
                         T.StructField("transaction_type", T.StringType(), True),
-                        T.StructField("transaction_dt", T.StringType(), True),
+                        T.StructField("amount", T.LongType(), True),
+                        T.StructField("transaction_dt", T.TimestampType(), True),
                     ]
                 ),
             ),
@@ -179,6 +180,7 @@ def collect_clean_layer(frame: pyspark.sql.DataFrame, config: dict) -> None:
                 country="payload.country",
                 status="payload.status",
                 transaction_type="payload.transaction_type",
+                amount="payload.amount",
                 transaction_dt=F.to_timestamp(
                     F.col("payload.transaction_dt"), r"yyyy-MM-dd HH:mm:ss"
                 ),
@@ -192,6 +194,7 @@ def collect_clean_layer(frame: pyspark.sql.DataFrame, config: dict) -> None:
             "country",
             "status",
             "transaction_type",
+            "amount",
             "transaction_dt",
             "trigger_dttm",
             "date",
@@ -213,7 +216,7 @@ def collect_clean_layer(frame: pyspark.sql.DataFrame, config: dict) -> None:
                 F.col("payload"),
                 schema=T.StructType(
                     [
-                        T.StructField("date_update", T.StringType(), True),
+                        T.StructField("date_update", T.DateType(), True),
                         T.StructField("currency_code", T.IntegerType(), True),
                         T.StructField("currency_code_with", T.IntegerType(), True),
                         T.StructField("currency_with_div", T.FloatType(), True),

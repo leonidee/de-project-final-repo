@@ -38,35 +38,6 @@ docker exec -it spark-master \
 ```
 
 
-
-## transaction-service-clean-collector
-
-For `transaction` table:
-
-```shell
-docker exec -it spark-master \
-	bash -c \
-	"cd /app \
-	&& source /app/.venv/bin/activate \
-	&& /opt/bitnami/spark/bin/spark-submit \
-	/app/src/transaction_service_clean_collector/runner.py \
-	--mode=dev --table=transaction --date=2023-09-24 --hour=15:00"
-```
-
-And for `currency` table:
-
-```shell
-docker exec -it spark-master \
-	bash -c \
-	"cd /app \
-	&& source /app/.venv/bin/activate \
-	&& /opt/bitnami/spark/bin/spark-submit \
-	/app/src/transaction_service_clean_collector/runner.py \
-	--mode=dev --table=currency --date=2023-09-24 --hour=15:00"
-```
-
-
-
 # Services
 
 ## Yandex cloud
@@ -117,37 +88,33 @@ yc managed-kafka user create $YC_KAFKA_USERNAME \
 
 ### Spark
 
+```shell
+export APP_NAME=spark \
+	&& export APP_RELEASE=v$(date +"%Y%m%d")-r1.0
+```
+
+```shell
+docker build -f docker/spark/Dockerfile -t $APP_NAME:$APP_RELEASE .
+```
+
+Set environment variable to indicate docker compose which images to use:
+
+```shell
+export SPARK_IMAGE=$APP_NAME:$APP_RELEASE
+```
+
 Up spark in docker containers with compose:
 
 ```shell
-docker compose up -d spark-master spark-worker-1 spark-worker-2 spark-worker-3 spark-worker-4
+docker compose up -d
 ```
 
-To see logs run:
+Now check that Spark cluster health and running:
 
 ```shell
 docker logs spark-master --follow 
 ```
 
-
-
-Submit job:
-
-```shell
-make submit-job
-```
-
-### Airflow
-
-```shell
-docker compose up airflow-init --build
-```
-
-```shell
-docker compose up -d airflow-webserver airflow-scheduler airflow-worker-1 airflow-triggerer
-
-docker compose up airflow-webserver airflow-scheduler airflow-worker-1 airflow-triggerer
-```
 
 
 
@@ -172,38 +139,6 @@ make run-consumer topic=transaction-service-input offset=begining
 ```
 
 
-# spark instalations
-
-Install java:
-
-```shell
-sudo apt-get update && sudo apt-get install -y default-jdk
-```
-
-```shell
-cd /tmp && wget https://dlcdn.apache.org/spark/spark-3.4.1/spark-3.4.1-bin-hadoop3.tgz
-```
-
-```shell
-mkdir /opt/spark && tar zxvf ./spark-3.4.1-bin-hadoop3.tgz -C /opt/spark
-```
-
-
-```shell
-apt-get update && apt-get install -y procps
-```
-
-
-```shell
-python3 -m pip install apache-airflow-providers-apache-spark==4.1.5
-```
-
-?
-```shell
-echo "export SPARK_HOME=/opt/spark/spark-3.4.1-bin-hadoop3/bin" >> ~/.bashrc
- 
-echo "export PATH=$PATH:$SPARK_HOME/bin:$SPARK_HOME/sbin" >> ~/.bashrc
-```
 
 
 # Producer 
@@ -221,20 +156,4 @@ docker build -f docker/producer/Dockerfile -t $APP_NAME:$APP_RELEASE .
 docker run -it --rm --name transaction-service-input-producer $APP_NAME:$APP_RELEASE
 ```
 
-
-
-# Spark 
-
-```shell
-export APP_NAME=spark \
-	&& export APP_RELEASE=v$(date +"%Y%m%d")-r1.0
-```
-
-```shell
-docker build -f docker/spark/Dockerfile -t $APP_NAME:$APP_RELEASE .
-```
-
-```shell
-docker images | grep "spark"
-```
 

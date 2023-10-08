@@ -1,12 +1,6 @@
-import os
-import sys
 import warnings
 
 import dotenv
-
-sys.path.append(os.getenv("APP_PATH"))
-from src.config import parse_config
-from src.logger import get_logger
 
 is_dotenv_loaded = dotenv.load_dotenv()
 

@@ -7,8 +7,8 @@ apps:
       app-name: app
       query-name: query
       trigger:
-        processing-time: 30 seconds
-        offsets-per-trigger: 10000
+        processing-time: 2 minutes # 30 seconds
+        offsets-per-trigger: 50000 #10000
     dev:
       <<: *config
       checkpoint-location: s3a://data-ice-lake-05/dev/source/spark-streaming-checkpoints/stream

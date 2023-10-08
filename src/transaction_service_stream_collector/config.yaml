@@ -9,8 +9,8 @@ app:
         path: s3a://data-ice-lake-05/prod/source/transaction-service
         partitionby: ["object_type", "date", "hour", "batch_id"]
       clean:
-        transaction-path: s3a://data-ice-lake-05/prod/clean/transaction-service/transaction
-        currency-path: s3a://data-ice-lake-05/prod/clean/transaction-service/currency
+        transaction-path: s3a://data-ice-lake-05/prod/clean/transaction-service/transactions
+        currency-path: s3a://data-ice-lake-05/prod/clean/transaction-service/сurrencies
         partitionby: ["date", "hour"]
     trigger:
       processing-time: &processing-time 2 minutes
@@ -24,9 +24,9 @@ app:
       # Topic subscribe to
       topic: transaction-service-input
       # Maximum number of offsets thath Spark should read per one trigger
-      offsets-per-trigger: 10000
+      offsets-per-trigger: 100000
       # Total number of partitions that Spark can create from all kafka partitions
-      # Now its equal to total numbers of executors
+      # If set to 8 it will be equal to total numbers of executors
       min-partitions: 8
 
   dev:
@@ -39,8 +39,8 @@ app:
         path: s3a://data-ice-lake-05/dev/source/transaction-service
         partitionby: ["object_type", "date", "hour", "batch_id"]
       clean:
-        transaction-path: s3a://data-ice-lake-05/dev/clean/transaction-service/transaction
-        currency-path: s3a://data-ice-lake-05/dev/clean/transaction-service/currency
+        transaction-path: s3a://data-ice-lake-05/dev/clean/transaction-service/transactions
+        currency-path: s3a://data-ice-lake-05/dev/clean/transaction-service/сurrencies
         partitionby: ["date", "hour"]
 
   test:
@@ -53,6 +53,6 @@ app:
         path: s3a://data-ice-lake-05/test/source/transaction-service
         partitionby: ["object_type", "date", "hour", "batch_id"]
       clean:
-        transaction-path: s3a://data-ice-lake-05/test/clean/transaction-service/transaction
-        currency-path: s3a://data-ice-lake-05/test/clean/transaction-service/currency
+        transaction-path: s3a://data-ice-lake-05/test/clean/transaction-service/transactions
+        currency-path: s3a://data-ice-lake-05/test/clean/transaction-service/сurrencies
         partitionby: ["date", "hour"]

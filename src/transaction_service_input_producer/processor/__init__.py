@@ -1,23 +1,16 @@
 import json
 from datetime import datetime
-from os import getenv
 from pprint import pformat
 
 import pandas as pd
-from s3fs import S3FileSystem
 
 from src import get_logger, parse_config
-from src.clients import kafka
+from src.clients import kafka, s3
 from src.transaction_service_input_producer.utils import get_uuid, validate_path
 
 log = get_logger(__name__)
 
-s3 = S3FileSystem(
-    key=getenv("S3_ACCESS_KEY_ID"),
-    secret=getenv("S3_SECRET_ACCESS_KEY"),
-    endpoint_url=getenv("S3_ENDPOINT_URL"),
-)
-
+s3 = s3.get_client()
 producer = kafka.get_producer()
 
 
