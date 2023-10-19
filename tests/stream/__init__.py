@@ -1,13 +1,13 @@
-# from tests.stream.components import first_func, super_func
 
-# __all__ = ["first_func", "super_func"]
 
+import abc
+import os  # noqa: F401, E402
 import sys
 
 import click
 
-# sys.path.append("/home/leonide/code/de-project-final-repo")
-from components import first_func, super_func
+sys.path.append("/home/leonide/code/de-project-final-repo")
+from components import first_func, super_func  # noqa: E402
 
 
 @click.command()
@@ -18,6 +18,8 @@ def main(one: str, value: int) -> None:
     super_func(value)
 
     print(sys.path)
+
+    
 
 
 if __name__ == "__main__":

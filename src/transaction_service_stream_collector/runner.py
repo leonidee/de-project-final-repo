@@ -23,7 +23,7 @@ log = get_logger(__name__)
     required=True,
 )
 @click.option(
-    "--log-level",
+    "--spark-log-level",
     help="Spark logging level",
     type=click.Choice(
         ["ALL", "DEBUG", "ERROR", "FATAL", "INFO", "OFF", "TRACE", "WARN"],

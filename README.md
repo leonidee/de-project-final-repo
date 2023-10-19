@@ -25,16 +25,20 @@ docker exec -it spark-master \
 	--driver-memory 4G \
 	--executor-cores 1 \
 	--executor-memory 2G \
+	--conf spark.executor.instances=8 \
 	--conf spark.dynamicAllocation.enabled=true \
-	--conf spark.dynamicAllocation.minExecutors=1 \
 	--conf spark.dynamicAllocation.maxExecutors=8 \
+	--conf spark.sql.shuffle.partitions=8 \
+	--conf spark.pyspark.virtualenv.enabled=true \
+	--conf spark.pyspark.virtualenv.type=native \
 	--conf spark.pyspark.python=/app/.venv/bin/python3.11 \
+	--conf spark.pyspark.virtualenv.bin.path=/app/.venv/bin \
 	--conf spark.ui.enabled=false \
 	--conf spark.sql.adaptive.enabled=false \
 	--packages org.apache.spark:spark-streaming-kafka-0-10_2.12:3.4.1,org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.1 \
 	/app/src/transaction_service_stream_collector/runner.py \
 	--mode=DEV \
-	--log-level=WARN"
+	--spark-log-level=WARN"
 ```
 
 
@@ -149,11 +153,15 @@ export APP_NAME=transaction-service-input-producer \
 ```
 
 ```shell
-docker build -f docker/producer/Dockerfile -t $APP_NAME:$APP_RELEASE .
+export PRODUCER_IMAGE=$APP_NAME:$APP_RELEASE
 ```
 
 ```shell
-docker run -it --rm --name transaction-service-input-producer $APP_NAME:$APP_RELEASE
+docker build -f docker/producer/Dockerfile -t $PRODUCER_IMAGE .
+```
+
+```shell
+docker run -it --rm --name transaction-service-input-producer $PRODUCER_IMAGE
 ```
 
 

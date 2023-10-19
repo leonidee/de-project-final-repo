@@ -13,7 +13,7 @@ app:
         currency-path: s3a://data-ice-lake-05/prod/clean/transaction-service/сurrencies
         partitionby: ["date", "hour"]
     trigger:
-      processing-time: &processing-time 2 minutes
+      processing-time: &processing-time 1 minutes
     deduplicate:
       # Streaming deduplication rules
       # Columns subset by which should deduplicate
@@ -24,7 +24,7 @@ app:
       # Topic subscribe to
       topic: transaction-service-input
       # Maximum number of offsets thath Spark should read per one trigger
-      offsets-per-trigger: 100000
+      offsets-per-trigger: 10000
       # Total number of partitions that Spark can create from all kafka partitions
       # If set to 8 it will be equal to total numbers of executors
       min-partitions: 8

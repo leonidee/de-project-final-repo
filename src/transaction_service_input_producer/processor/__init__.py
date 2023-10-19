@@ -55,7 +55,9 @@ def produce_currency_data(mode: str) -> None:
         producer.send(topic=topic, value=json.dumps(message).encode("utf-8"))
         count += 1
 
-    log.info(f"Done. Its took: {datetime.now() - stopwatch}. Sent {count} messages")
+    log.info(
+        f"Done. Its took: {datetime.now() - stopwatch}. Sent {count} messages in total"
+    )
 
 
 def produce_transaction_data(mode: str) -> None:
@@ -79,6 +81,8 @@ def produce_transaction_data(mode: str) -> None:
     log.info(f"Got dataframe with shape: {frame.shape}")
 
     count = 1
+
+    log.info("Processing...")
     for row in frame.itertuples(index=False):
         message = dict(
             object_id=row.operation_id,
@@ -99,7 +103,12 @@ def produce_transaction_data(mode: str) -> None:
 
         log.debug(f"Sending message:\n{pformat(message)}")
 
+        if count % 10_000 == 0:
+            log.info(f"Processed {count} messages")
+
         producer.send(topic=topic, value=json.dumps(message).encode("utf-8"))
         count += 1
 
-    log.info(f"Done. Its took: {datetime.now() - stopwatch}. Sent {count} messages")
+    log.info(
+        f"Done. Its took: {datetime.now() - stopwatch}. Sent {count} messages in total"
+    )

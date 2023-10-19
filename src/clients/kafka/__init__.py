@@ -4,7 +4,7 @@ from os import getenv
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
 
-from src import get_logger
+from src.logger import get_logger
 
 log = get_logger(name=__name__)
 
